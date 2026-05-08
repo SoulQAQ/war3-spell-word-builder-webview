@@ -274,7 +274,7 @@ class AppApi:
         except Exception as e:
             print(f'处理拖拽事件失败: {e}')
     
-    def get_initial_state(self, payload=None) -> dict:
+    def get_packaging_initial_state(self, payload=None) -> dict:
         """
         返回初始状态
 
@@ -1520,6 +1520,15 @@ class AppApi:
 
     def get_settings(self, payload=None) -> dict:
         return self.wc3_get_settings(payload)
+
+    def get_initial_state(self, payload=None) -> dict:
+        return self.wc3_get_initial_state(payload)
+
+    def get_initial_state_wc3(self, payload=None) -> dict:
+        return self.wc3_get_initial_state(payload)
+
+    def get_initial_state_v2(self, payload=None) -> dict:
+        return self.wc3_get_initial_state(payload)
 
     def wc3_get_initial_state(self, payload=None) -> dict:
         """

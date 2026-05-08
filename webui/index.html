@@ -235,21 +235,21 @@
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            overflow: hidden;
+            gap: 16px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            justify-content: flex-start;
+            align-items: stretch;
         }
 
-        .edit-left > .form-item:first-child {
-            flex: 0 1 50%;
-            max-height: 50%;
+        .edit-left .form-item {
+            flex: 0 0 auto;
+            min-width: 0;
+        }
+
+        .edit-left .spell-preview {
             min-height: 120px;
-            overflow-y: auto;
-        }
-
-        .edit-left > .form-item:not(:first-child) {
-            flex: 1 1 auto;
-            min-height: 0;
-            overflow-y: auto;
+            max-height: 320px;
         }
 
         .edit-right {
@@ -303,6 +303,14 @@
             display: flex;
             gap: 12px;
             margin-bottom: 12px;
+            min-width: 0;
+        }
+
+        .basic-info-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(120px, 0.6fr) minmax(120px, 0.7fr);
+            gap: 16px;
+            align-items: start;
         }
 
         .form-item {
@@ -310,6 +318,7 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+            min-width: 0;
         }
 
         .form-label {
@@ -318,6 +327,9 @@
         }
 
         .form-input {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             height: 32px;
             padding: 0 10px;
             border: 1px solid var(--border-color);
@@ -325,6 +337,7 @@
             font-size: 13px;
             transition: var(--transition);
             outline: none;
+            box-sizing: border-box;
         }
 
         .form-input:focus {
@@ -334,6 +347,8 @@
 
         .form-textarea {
             width: 100%;
+            max-width: 100%;
+            min-width: 0;
             min-height: 60px;
             padding: 8px 10px;
             border: 1px solid var(--border-color);
@@ -343,6 +358,19 @@
             resize: vertical;
             transition: var(--transition);
             outline: none;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1200px) {
+            .basic-info-row {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            }
+        }
+
+        @media (max-width: 860px) {
+            .basic-info-row {
+                grid-template-columns: minmax(0, 1fr);
+            }
         }
 
         .form-textarea:focus {
@@ -785,7 +813,7 @@
                     <div class="edit-right">
                         <div class="form-section">
                             <div class="form-title">基本信息</div>
-                            <div class="form-row">
+                            <div class="form-row basic-info-row">
                                 <div class="form-item">
                                     <label class="form-label">技能ID</label>
                                     <input type="text" class="form-input" id="spellId" placeholder="A000" oninput="onSpellDataChange()">
@@ -794,11 +822,11 @@
                                     <label class="form-label">名称</label>
                                     <input type="text" class="form-input" id="spellName" placeholder="技能名称" oninput="onSpellDataChange()">
                                 </div>
-                                <div class="form-item" style="flex: 0 0 80px;">
+                                <div class="form-item">
                                     <label class="form-label">热键</label>
                                     <input type="text" class="form-input" id="spellHotKey" placeholder="Q" oninput="onSpellDataChange()">
                                 </div>
-                                <div class="form-item" style="flex: 0 0 110px;">
+                                <div class="form-item">
                                     <label class="form-label">技能等级</label>
                                     <input type="number" class="form-input" id="spellLevel" min="1" max="10" value="1" oninput="onSpellLevelChange()">
                                 </div>
@@ -1058,20 +1086,44 @@
         // API调用
         // ============================================================================
         const API_METHOD_ALIASES = {
-            wc3_get_initial_state: ['get_initial_state'],
+            wc3_get_initial_state: ['get_initial_state', 'get_initial_state_wc3', 'get_initial_state_v2'],
             wc3_get_spell_tree: ['get_spell_tree'],
             wc3_get_color_configs: ['get_color_configs'],
             wc3_get_settings: ['get_settings']
         };
 
+        function toCamelCase(name) {
+            return String(name || '').replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+        }
+
+        function getApiMethodCandidates(method) {
+            const aliases = API_METHOD_ALIASES[method] || [];
+            const raw = [method, ...aliases].filter(Boolean);
+            const candidates = [];
+            raw.forEach(name => {
+                candidates.push(name);
+                candidates.push(toCamelCase(name));
+            });
+            return Array.from(new Set(candidates));
+        }
+
+        function hasApiMethod(api, method) {
+            try {
+                if (!api) return false;
+                const val = api[method];
+                return val !== undefined && val !== null;
+            } catch (_) {
+                return false;
+            }
+        }
+
         function resolveApiMethodName(method) {
             const api = window.pywebview?.api;
             if (!api) return null;
-            if (typeof api[method] === 'function') return method;
-            const aliases = API_METHOD_ALIASES[method] || [];
-            for (const alias of aliases) {
-                if (typeof api[alias] === 'function') {
-                    return alias;
+            const candidates = getApiMethodCandidates(method);
+            for (const candidate of candidates) {
+                if (hasApiMethod(api, candidate)) {
+                    return candidate;
                 }
             }
             return null;
@@ -1080,7 +1132,19 @@
         async function waitForApiMethod(method, timeoutMs = 4000) {
             const start = Date.now();
             while (Date.now() - start < timeoutMs) {
-                if (resolveApiMethodName(method)) {
+                const resolved = resolveApiMethodName(method);
+                if (resolved) {
+                    return resolved;
+                }
+                await new Promise(r => setTimeout(r, 50));
+            }
+            return null;
+        }
+
+        async function waitForPywebviewApi(timeoutMs = 4000) {
+            const start = Date.now();
+            while (Date.now() - start < timeoutMs) {
+                if (window.pywebview?.api) {
                     return true;
                 }
                 await new Promise(r => setTimeout(r, 50));
@@ -1094,13 +1158,16 @@
             }
             let resolvedMethod = resolveApiMethodName(method);
             if (!resolvedMethod) {
-                const ready = await waitForApiMethod(method, 4000);
-                resolvedMethod = resolveApiMethodName(method);
-                if (!ready || !resolvedMethod) {
-                    throw new Error(`API method not found: ${method}`);
-                }
+                resolvedMethod = await waitForApiMethod(method, 4000);
             }
-            return window.pywebview.api[resolvedMethod](payload);
+            if (!resolvedMethod) {
+                throw new Error(`API method not found: ${method}`);
+            }
+            const apiMethod = window.pywebview.api[resolvedMethod];
+            if (typeof apiMethod !== 'function') {
+                throw new Error(`API method not callable: ${resolvedMethod}`);
+            }
+            return apiMethod(payload);
         }
 
         function showToast(message, type = 'info') {
@@ -1147,6 +1214,62 @@
                 result.push(val);
             });
             return result;
+        }
+
+        function getEmptyInitialStateData() {
+            return {
+                tree: [],
+                colorConfigs: [],
+                currentColorConfig: {...defaultColorConfig},
+                currentColorName: 'default',
+                settings: {
+                    spellProSuggestions: [...defaultSpellProSuggestionList]
+                },
+                defaultSpellData: {...defaultSpellData}
+            };
+        }
+
+        function normalizeInitialStateData(data) {
+            const source = (data && typeof data === 'object') ? data : {};
+            const normalized = getEmptyInitialStateData();
+
+            normalized.tree = Array.isArray(source.tree) ? source.tree : [];
+            normalized.colorConfigs = Array.isArray(source.colorConfigs) ? source.colorConfigs : [];
+            normalized.currentColorConfig = source.currentColorConfig && typeof source.currentColorConfig === 'object'
+                ? {...defaultColorConfig, ...source.currentColorConfig}
+                : {...defaultColorConfig};
+            normalized.currentColorName = typeof source.currentColorName === 'string' && source.currentColorName
+                ? source.currentColorName
+                : 'default';
+            normalized.settings = source.settings && typeof source.settings === 'object'
+                ? {...source.settings}
+                : {};
+            normalized.settings.spellProSuggestions = dedupeStringsKeepOrder(
+                normalized.settings.spellProSuggestions || defaultSpellProSuggestionList
+            );
+            normalized.defaultSpellData = source.defaultSpellData && typeof source.defaultSpellData === 'object'
+                ? {...defaultSpellData, ...source.defaultSpellData}
+                : {...defaultSpellData};
+
+            return normalized;
+        }
+
+        function applyInitialStateData(data) {
+            const normalized = normalizeInitialStateData(data);
+            state.tree = normalized.tree;
+            state.colorConfigs = normalized.colorConfigs;
+            state.colorConfig = normalized.currentColorConfig;
+            state.currentColorName = normalized.currentColorName;
+            state.settings = normalized.settings;
+
+            renderTree();
+            loadColorConfigToForm(state.colorConfig);
+            renderColorConfigSelect();
+            resetSpellData();
+
+            const rawLevel = parseInt(normalized.defaultSpellData?.level ?? normalized.defaultSpellData?.lv ?? 1) || 1;
+            const level = Math.min(Math.max(rawLevel, 1), 10);
+            document.getElementById('spellLevel').value = level;
         }
 
         function copyToClipboard(text) {
@@ -2323,33 +2446,24 @@
         async function bootstrap() {
             try {
                 // 等待API就绪
-                while (!window.pywebview?.api) {
-                    await new Promise(r => setTimeout(r, 50));
+                const ready = await waitForPywebviewApi(4000);
+                if (!ready) {
+                    throw new Error('pywebview API unavailable');
                 }
 
                 // 获取初始状态
                 const result = await callApi('wc3_get_initial_state');
-                if (result.success) {
-                    const data = result.data;
-                    state.tree = data.tree || [];
-                    state.colorConfigs = data.colorConfigs || [];
-                    state.colorConfig = data.currentColorConfig || {...defaultColorConfig};
-                    state.currentColorName = data.currentColorName || 'default';
-                    state.settings = data.settings || {};
-                    state.settings.spellProSuggestions = dedupeStringsKeepOrder(state.settings.spellProSuggestions || defaultSpellProSuggestionList);
-
-                    // 渲染UI
-                    renderTree();
-                    loadColorConfigToForm(state.colorConfig);
-                    renderColorConfigSelect();
-                    resetSpellData();
-
-                    const rawLevel = parseInt(data.defaultSpellData?.level ?? data.defaultSpellData?.lv ?? 1) || 1;
-                    const level = Math.min(Math.max(rawLevel, 1), 10);
-                    document.getElementById('spellLevel').value = level;
+                if (!result || !result.success) {
+                    throw new Error(result?.message || 'Initialization API returned failure');
                 }
+                applyInitialStateData(result.data);
             } catch (e) {
                 console.error('初始化失败:', e);
+                if (e?.message && (e.message.includes('API method not found') || e.message.includes('pywebview API unavailable'))) {
+                    console.warn('[WC3] API not available, using fallback initial state.', e.message);
+                    applyInitialStateData(getEmptyInitialStateData());
+                    return;
+                }
                 showToast('初始化失败: ' + e.message, 'error');
             }
         }
