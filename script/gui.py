@@ -172,6 +172,42 @@ DEFAULT_SPELL_DATA = {
     "normalWord": {"text": "", "vals": []}
 }
 
+DEFAULT_SPELL_PRO_LIST = [
+    {"name": "法力消耗", "val": None},
+    {"name": "施法距离", "val": None},
+    {"name": "冷却时间", "val": None},
+    {"name": "持续时间", "val": None},
+    {"name": "法术范围", "val": None},
+    {"name": "吟唱时间", "val": None},
+]
+
+
+def _dedupe_spell_pro_suggestions(items) -> list:
+    """
+    规范化并去重技能属性推荐值（保留原有顺序）
+    """
+    if not isinstance(items, list):
+        return []
+
+    seen = set()
+    result = []
+    for item in items:
+        if not isinstance(item, str):
+            continue
+        name = item.strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        result.append(name)
+    return result
+
+
+def get_default_spell_pro_suggestion_names() -> list:
+    """
+    获取默认技能属性推荐名称列表
+    """
+    return _dedupe_spell_pro_suggestions([item.get("name", "") for item in DEFAULT_SPELL_PRO_LIST])
+
 
 def ensure_data_dirs():
     """
@@ -196,7 +232,8 @@ def ensure_data_dirs():
             default_settings = {
                 "lastCategory": "",
                 "lastSpell": "",
-                "colorConfig": "default"
+                "colorConfig": "default",
+                "spellProSuggestions": get_default_spell_pro_suggestion_names()
             }
             with open(SETTINGS_PATH, 'w', encoding='utf-8') as f:
                 json.dump(default_settings, f, ensure_ascii=False, indent=2)
@@ -1064,6 +1101,73 @@ class AppApi:
         except Exception as e:
             return {'success': False, 'message': f'重命名失败: {str(e)}'}
 
+    def wc3_move_spell(self, payload: dict) -> dict:
+        """
+        移动技能文件到目标分类
+
+        参数:
+            payload: {'fromPath': str, 'toCategoryPath': str}
+
+        返回:
+            dict: {'success': bool, 'message': str, 'data': {'path': str}}
+        """
+        try:
+            if not payload or 'fromPath' not in payload:
+                return {'success': False, 'message': '来源路径参数缺失'}
+
+            from_rel = str(payload.get('fromPath', '')).strip().replace('\\', '/')
+            to_category_rel = str(payload.get('toCategoryPath', '')).strip().replace('\\', '/')
+
+            if not from_rel:
+                return {'success': False, 'message': '来源路径不能为空'}
+
+            if '..' in from_rel or '..' in to_category_rel:
+                return {'success': False, 'message': '无效的路径'}
+
+            source_path = (SPELLS_DIR / from_rel).resolve()
+            spells_root = SPELLS_DIR.resolve()
+
+            try:
+                source_path.relative_to(spells_root)
+            except Exception:
+                return {'success': False, 'message': '来源路径越界'}
+
+            if not source_path.exists() or not source_path.is_file():
+                return {'success': False, 'message': '来源技能文件不存在'}
+
+            target_dir = spells_root / to_category_rel if to_category_rel else spells_root
+            target_dir = target_dir.resolve()
+
+            try:
+                target_dir.relative_to(spells_root)
+            except Exception:
+                return {'success': False, 'message': '目标路径越界'}
+
+            if not target_dir.exists() or not target_dir.is_dir():
+                return {'success': False, 'message': '目标分类不存在'}
+
+            target_path = target_dir / source_path.name
+
+            if target_path == source_path:
+                return {
+                    'success': True,
+                    'message': '技能已在该分类下',
+                    'data': {'path': str(source_path.relative_to(spells_root)).replace('\\', '/')}
+                }
+
+            if target_path.exists():
+                return {'success': False, 'message': '目标分类下已存在同名技能文件'}
+
+            source_path.rename(target_path)
+
+            return {
+                'success': True,
+                'message': '技能移动成功',
+                'data': {'path': str(target_path.relative_to(spells_root)).replace('\\', '/')}
+            }
+        except Exception as e:
+            return {'success': False, 'message': f'移动技能失败: {str(e)}'}
+
     def wc3_export_category(self, payload: dict) -> dict:
         """
         导出分类到JSON文件
@@ -1323,15 +1427,39 @@ class AppApi:
         try:
             ensure_data_dirs()
 
+            default_settings = {
+                'lastCategory': '',
+                'lastSpell': '',
+                'colorConfig': 'default',
+                'spellProSuggestions': get_default_spell_pro_suggestion_names()
+            }
+
             if SETTINGS_PATH.exists():
                 with open(SETTINGS_PATH, 'r', encoding='utf-8') as f:
                     settings = json.load(f)
             else:
-                settings = {
-                    'lastCategory': '',
-                    'lastSpell': '',
-                    'colorConfig': 'default'
-                }
+                settings = default_settings
+
+            if not isinstance(settings, dict):
+                settings = default_settings
+
+            changed = False
+            for key, value in default_settings.items():
+                if key not in settings:
+                    settings[key] = value
+                    changed = True
+
+            suggestions = settings.get('spellProSuggestions')
+            normalized = _dedupe_spell_pro_suggestions(suggestions)
+            if not normalized:
+                normalized = default_settings['spellProSuggestions']
+            if normalized != suggestions:
+                settings['spellProSuggestions'] = normalized
+                changed = True
+
+            if changed:
+                with open(SETTINGS_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(settings, f, ensure_ascii=False, indent=2)
 
             return {
                 'success': True,
@@ -1369,6 +1497,12 @@ class AppApi:
                 settings = {}
 
             settings.update(payload)
+
+            if 'spellProSuggestions' in settings:
+                normalized = _dedupe_spell_pro_suggestions(settings.get('spellProSuggestions'))
+                if not normalized:
+                    normalized = get_default_spell_pro_suggestion_names()
+                settings['spellProSuggestions'] = normalized
 
             with open(SETTINGS_PATH, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, ensure_ascii=False, indent=2)

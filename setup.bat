@@ -21,7 +21,7 @@ echo [INFO] Checking Python 3.13...
 py -3.13 -c "import sys" >nul 2>nul
 if errorlevel 1 (
     echo [ERROR] Python 3.13 not found.
-    echo [HINT] Please install Python 3.13 (Python 3.14 is not supported due to pythonnet compatibility).
+    echo [HINT] Please install Python 3.13 ^(Python 3.14 is not supported due to pythonnet compatibility^).
     echo.
     pause
     exit /b 1
@@ -60,8 +60,25 @@ if errorlevel 1 (
 )
 
 :: 4. Upgrade pip
+echo [INFO] Checking pip in virtual environment...
+"%VENV_PY%" -m pip --version >nul 2>nul
+if errorlevel 1 (
+    echo [INFO] pip not found, bootstrapping with ensurepip...
+    "%VENV_PY%" -m ensurepip --upgrade
+    if errorlevel 1 (
+        echo [ERROR] Failed to bootstrap pip.
+        pause
+        exit /b 1
+    )
+)
+
 echo [INFO] Upgrading pip...
-"%VENV_PY%" -m pip install --upgrade pip setuptools wheel >nul 2>nul
+"%VENV_PY%" -m pip install --upgrade pip setuptools wheel
+if errorlevel 1 (
+    echo [ERROR] Failed to upgrade pip/setuptools/wheel.
+    pause
+    exit /b 1
+)
 
 :: 5. Install dependencies
 if exist "%REQUIREMENTS%" (

@@ -78,6 +78,23 @@
             border-top: 1px solid var(--border-color);
         }
 
+        .root-drop-target {
+            margin-bottom: 8px;
+            border: 1px dashed var(--border-color);
+            color: var(--text-secondary);
+            border-radius: var(--radius);
+            text-align: center;
+            padding: 6px 8px;
+            font-size: 12px;
+            transition: var(--transition);
+        }
+
+        .root-drop-target.drag-over {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(74, 144, 217, 0.08);
+        }
+
         /* 树形结构 */
         .tree-item {
             cursor: pointer;
@@ -98,6 +115,15 @@
         .tree-row.selected {
             background: rgba(74, 144, 217, 0.1);
             color: var(--primary-color);
+        }
+
+        .tree-row.drag-over {
+            background: rgba(74, 144, 217, 0.15);
+            outline: 1px dashed var(--primary-color);
+        }
+
+        .tree-row.dragging {
+            opacity: 0.6;
         }
 
         .tree-icon {
@@ -154,9 +180,14 @@
         /* Tab栏 */
         .tab-bar {
             display: flex;
+            align-items: center;
             background: var(--card-bg);
             border-bottom: 1px solid var(--border-color);
             padding: 0 16px;
+        }
+
+        .tab-spacer {
+            flex: 1;
         }
 
         .tab-item {
@@ -186,6 +217,7 @@
 
         .tab-content.active {
             display: flex;
+            flex-direction: column;
         }
 
         /* 编辑Tab布局 */
@@ -210,6 +242,7 @@
         .edit-right {
             flex: 1;
             padding: 16px;
+            padding-bottom: 80px;
             overflow-y: auto;
         }
 
@@ -403,6 +436,56 @@
             flex: 1;
         }
 
+        .property-name-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .property-suggest-list {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 4px);
+            z-index: 50;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: #fff;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+
+        .property-suggest-list.active {
+            display: block;
+        }
+
+        .property-suggest-item {
+            padding: 7px 10px;
+            cursor: pointer;
+        }
+
+        .property-suggest-item:hover {
+            background: #f0f2f5;
+        }
+
+        .setting-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-item .form-input {
+            flex: 1;
+        }
+
         .property-remove {
             width: 24px;
             height: 24px;
@@ -453,16 +536,19 @@
         .bottom-bar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 12px 16px;
             background: var(--card-bg);
             border-top: 1px solid var(--border-color);
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+            gap: 8px;
         }
 
         .bottom-left {
             display: flex;
             align-items: center;
             gap: 8px;
+            margin-right: auto;
         }
 
         .bottom-right {
@@ -633,6 +719,12 @@
                 <button class="btn btn-small btn-secondary" onclick="showNewCategoryModal()">+ 分类</button>
             </div>
             <div class="sidebar-content" id="treeContainer">
+                <div class="root-drop-target"
+                     ondragover="onRootDragOver(event)"
+                     ondragleave="onRootDragLeave(event)"
+                     ondrop="onRootDrop(event)">
+                    拖到这里移动到根目录
+                </div>
                 <!-- 树形结构动态渲染 -->
             </div>
             <div class="sidebar-footer">
@@ -646,6 +738,8 @@
             <div class="tab-bar">
                 <div class="tab-item active" data-tab="edit" onclick="switchTab('edit')">编辑文本</div>
                 <div class="tab-item" data-tab="color" onclick="switchTab('color')">色彩</div>
+                <div class="tab-spacer"></div>
+                <button class="btn btn-small btn-secondary" onclick="openSettingsModal()">设置</button>
             </div>
 
             <!-- 编辑Tab -->
@@ -653,6 +747,12 @@
                 <div class="edit-layout">
                     <!-- 左侧：预览与操作 -->
                     <div class="edit-left">
+                        <div class="form-item">
+                            <label class="form-label">技能预览</label>
+                            <div class="spell-preview" id="spellPreview">
+                                <!-- 动态渲染 -->
+                            </div>
+                        </div>
                         <div class="form-item">
                             <label class="form-label">显示模式</label>
                             <div class="radio-group">
@@ -664,16 +764,6 @@
                             <label class="form-label">等级选择</label>
                             <div class="radio-group" id="levelSelector">
                                 <!-- 动态生成 -->
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-success" style="flex: 1;" onclick="showGenerateModal()">生成</button>
-                            <button class="btn btn-secondary" style="flex: 1;" onclick="resetSpellData()">恢复默认</button>
-                        </div>
-                        <div class="form-item" style="flex: 1;">
-                            <label class="form-label">技能预览</label>
-                            <div class="spell-preview" id="spellPreview">
-                                <!-- 动态渲染 -->
                             </div>
                         </div>
                     </div>
@@ -695,6 +785,10 @@
                                     <label class="form-label">热键</label>
                                     <input type="text" class="form-input" id="spellHotKey" placeholder="Q" oninput="onSpellDataChange()">
                                 </div>
+                                <div class="form-item" style="flex: 0 0 110px;">
+                                    <label class="form-label">技能等级</label>
+                                    <input type="number" class="form-input" id="spellLevel" min="1" max="10" value="1" oninput="onSpellLevelChange()">
+                                </div>
                             </div>
                             <div class="form-item">
                                 <label class="form-label">技能描述</label>
@@ -708,35 +802,25 @@
 
                         <div class="form-section">
                             <div class="form-title">
-                                升级描述
+                                技能描述
                                 <span style="font-weight: normal; color: var(--text-placeholder); font-size: 11px; margin-left: 8px;">
                                     用{a}{b}标记数值位置
                                 </span>
                             </div>
                             <div class="form-item">
-                                <label class="form-label">描述文本</label>
+                                <label class="form-label">普通描述文本</label>
+                                <textarea class="form-textarea" id="normalWordText" placeholder="例：向目标投掷一巨大的魔法锤，对其造成{d}点伤害并使其{t}秒内处于眩晕状态。" oninput="onSpellDataChange()"></textarea>
+                            </div>
+                            <div class="form-item">
+                                <label class="form-label">升级描述文本</label>
                                 <input type="text" class="form-input" id="updateWordText" placeholder="例：{d}点伤害，{t}秒晕眩时间" oninput="onSpellDataChange()">
                             </div>
                             <div class="form-item">
                                 <label class="form-label">数值参数</label>
-                                <textarea class="form-textarea" id="updateWordVals" placeholder="例：[lv=3][d=100+110][t=3+1]" oninput="onSpellDataChange()" style="min-height: 40px;"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="form-title">
-                                普通描述
-                                <span style="font-weight: normal; color: var(--text-placeholder); font-size: 11px; margin-left: 8px;">
-                                    显示在技能tooltip中
+                                <input type="text" class="form-input" id="valueParams" placeholder="例：lv=3；d=100+110；t=3+1" oninput="onSpellDataChange()">
+                                <span style="font-size: 11px; color: var(--text-placeholder); margin-top: 4px; display: block;">
+                                    格式：lv=等级数；参数=基础值+增量 或 参数=值1,值2,值3
                                 </span>
-                            </div>
-                            <div class="form-item">
-                                <label class="form-label">描述文本</label>
-                                <textarea class="form-textarea" id="normalWordText" placeholder="例：向目标投掷一巨大的魔法锤，对其造成{d}点伤害并使其{t}秒内处于眩晕状态。" oninput="onSpellDataChange()"></textarea>
-                            </div>
-                            <div class="form-item">
-                                <label class="form-label">数值参数</label>
-                                <textarea class="form-textarea" id="normalWordVals" placeholder="例：[lv=3][d=100+110][t=3+1]" oninput="onSpellDataChange()" style="min-height: 40px;"></textarea>
                             </div>
                         </div>
 
@@ -755,6 +839,8 @@
                         <span id="currentPath" style="color: var(--text-placeholder);">未保存</span>
                     </div>
                     <div class="bottom-right">
+                        <button class="btn btn-success" onclick="showGenerateModal()">生成</button>
+                        <button class="btn btn-secondary" onclick="resetSpellData()">恢复默认</button>
                         <button class="btn btn-secondary" onclick="saveSpellAs()">另存为</button>
                         <button class="btn btn-primary" onclick="saveSpell()">保存</button>
                     </div>
@@ -886,6 +972,26 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal" style="max-width: 560px;">
+            <div class="modal-header">设置</div>
+            <div class="modal-body">
+                <div class="form-section" style="margin-bottom: 0;">
+                    <div class="form-title">技能属性推荐值</div>
+                    <div class="setting-list" id="spellProSuggestionList"></div>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button class="btn btn-small btn-secondary" onclick="addSpellProSuggestion()">+ 添加</button>
+                        <button class="btn btn-small btn-secondary" onclick="resetSpellProSuggestions()">恢复默认</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('settingsModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -926,6 +1032,15 @@
             nature: '#ffcccc'
         };
 
+        const defaultSpellProSuggestionList = [
+            '法力消耗',
+            '施法距离',
+            '冷却时间',
+            '持续时间',
+            '法术范围',
+            '吟唱时间'
+        ];
+
         // ============================================================================
         // API调用
         // ============================================================================
@@ -956,6 +1071,37 @@
 
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
+        }
+
+        function escapeAttr(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function escapeJsString(str) {
+            return String(str || '')
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'");
+        }
+
+        function normalizePath(path) {
+            return String(path || '').replace(/\\/g, '/');
+        }
+
+        function dedupeStringsKeepOrder(list) {
+            const src = Array.isArray(list) ? list : [];
+            const seen = new Set();
+            const result = [];
+            src.forEach(item => {
+                const val = String(item || '').trim();
+                if (!val || seen.has(val)) return;
+                seen.add(val);
+                result.push(val);
+            });
+            return result;
         }
 
         function copyToClipboard(text) {
@@ -989,55 +1135,102 @@
             return str;
         };
 
-        // 数值解析函数
-        function conversion(str) {
-            if (!str || typeof str !== 'string') return [];
+        // 数值参数解析（兼容旧格式 [lv=3][a=5+10] 与新格式 lv=3；a=5+10）
+        function parseValueParams(str) {
+            if (!str || typeof str !== 'string') return {lv: 1, params: {}};
 
-            // 提取配置
-            const cfgMatch = str.match(/\{([^}]*)\}/);
-            let cfg = {fs: '+', ls: ',', es: '=', lv: 'lv'};
-            if (cfgMatch) {
-                const items = cfgMatch[1].split(', ');
-                items.forEach(item => {
-                    const [k, v] = item.split(':');
-                    if (k && v) cfg[k] = v;
-                });
+            const raw = String(str).trim();
+            if (!raw) return {lv: 1, params: {}};
+
+            if (raw.includes('[') && raw.includes(']')) {
+                return parseOldBracketFormat(raw);
+            }
+            return parseSemicolonFormat(raw);
+        }
+
+        function parseOldBracketFormat(str) {
+            let lv = 1;
+            const params = {};
+
+            const lvMatch = str.match(/\[lv\s*=\s*(\d+)\]/i);
+            if (lvMatch) {
+                lv = Math.max(parseInt(lvMatch[1]) || 1, 1);
             }
 
-            // 提取[lv=x]
-            const lvMatch = str.match(new RegExp('\\[' + cfg.lv + cfg.es + '(\\d+)\\]'));
-            if (!lvMatch) return [];
-            const lv = parseInt(lvMatch[1]);
-
-            // 提取其他参数
-            const pairs = [];
-            const regex = /\[([a-z])=([^\]]+)\]/g;
+            const regex = /\[([a-zA-Z]+)\s*=\s*([^\]]+)\]/g;
             let match;
             while ((match = regex.exec(str)) !== null) {
-                const key = match[1];
-                if (key === cfg.lv) continue;
-                const val = match[2];
-                pairs.push({key, val});
+                const key = match[1].trim().toLowerCase();
+                const value = match[2].trim();
+                if (!key || key === 'lv' || !value) continue;
+                params[key] = value;
             }
 
-            // 生成结果
+            return {lv, params};
+        }
+
+        function parseSemicolonFormat(str) {
+            let lv = 1;
+            const params = {};
+
+            const parts = str.split(/[;；]/);
+            parts.forEach(part => {
+                const item = String(part || '').trim();
+                if (!item) return;
+                const eqIdx = item.indexOf('=');
+                if (eqIdx <= 0) return;
+
+                const key = item.slice(0, eqIdx).trim().toLowerCase();
+                const value = item.slice(eqIdx + 1).trim();
+                if (!key || !value) return;
+
+                if (key === 'lv') {
+                    lv = Math.max(parseInt(value) || 1, 1);
+                } else {
+                    params[key] = value;
+                }
+            });
+
+            return {lv, params};
+        }
+
+        function generateValues(lv, params) {
+            const total = Math.max(parseInt(lv) || 1, 1);
             const result = [];
-            for (let i = 0; i < lv; i++) {
+            for (let i = 0; i < total; i++) {
                 const obj = {};
-                pairs.forEach(({key, val}) => {
-                    if (val.indexOf(cfg.fs) !== -1) {
-                        // 公式
-                        const [base, plus] = val.split(cfg.fs).map(Number);
-                        obj[key] = base + plus * i;
-                    } else {
-                        // 列表
-                        const vals = val.split(cfg.ls).map(Number);
-                        obj[key] = vals[i] !== undefined ? vals[i] : 'null';
+                Object.keys(params || {}).forEach(key => {
+                    const val = String(params[key] || '').trim();
+                    if (!val) return;
+                    if (val.includes('+')) {
+                        const [baseRaw, plusRaw] = val.split('+');
+                        const base = parseFloat((baseRaw || '').trim());
+                        const plus = parseFloat((plusRaw || '').trim());
+                        if (!Number.isNaN(base) && !Number.isNaN(plus)) {
+                            obj[key] = base + plus * i;
+                            return;
+                        }
                     }
+                    if (val.includes(',')) {
+                        const vals = val.split(',').map(v => String(v || '').trim());
+                        obj[key] = vals[i] !== undefined ? vals[i] : (vals[vals.length - 1] || '');
+                        return;
+                    }
+                    obj[key] = val;
                 });
                 result.push(obj);
             }
             return result;
+        }
+
+        function paramsToSaveFormat(lv, params) {
+            const parts = [`lv=${Math.max(parseInt(lv) || 1, 1)}`];
+            Object.keys(params || {}).forEach(key => {
+                const val = String(params[key] || '').trim();
+                if (!key || !val) return;
+                parts.push(`${key}=${val}`);
+            });
+            return parts.join('；');
         }
 
         // ============================================================================
@@ -1045,7 +1238,15 @@
         // ============================================================================
         function renderTree() {
             const container = document.getElementById('treeContainer');
-            container.innerHTML = renderTreeItems(state.tree);
+            const rootDrop = `
+                <div class="root-drop-target"
+                     ondragover="onRootDragOver(event)"
+                     ondragleave="onRootDragLeave(event)"
+                     ondrop="onRootDrop(event)">
+                    拖到这里移动到根目录
+                </div>
+            `;
+            container.innerHTML = rootDrop + renderTreeItems(state.tree);
         }
 
         function renderTreeItems(items, depth = 0) {
@@ -1054,9 +1255,17 @@
                 if (item.type === 'category') {
                     const hasChildren = item.children && item.children.length > 0;
                     const expandIcon = item.expanded ? '▼' : '▶';
+                    const itemPath = normalizePath(item.path || '');
+                    const safePath = escapeJsString(itemPath);
                     return `
                         <div class="tree-item">
-                            <div class="tree-row" onclick="toggleCategory('${item.path}')" oncontextmenu="showTreeContextMenu(event, 'category', '${item.path}')">
+                            <div class="tree-row"
+                                 onclick="toggleCategory('${safePath}')"
+                                 oncontextmenu="showTreeContextMenu(event, 'category', '${safePath}')"
+                                 ondragover="onCategoryDragOver(event)"
+                                 ondragleave="onCategoryDragLeave(event)"
+                                 ondrop="onCategoryDrop(event, '${safePath}')"
+                                 data-drop-path="${escapeAttr(itemPath)}">
                                 ${hasChildren ? `<span class="tree-expand">${expandIcon}</span>` : '<span class="tree-expand"></span>'}
                                 <span class="tree-icon">📁</span>
                                 <span class="tree-name">${item.name}</span>
@@ -1067,11 +1276,16 @@
                         </div>
                     `;
                 } else {
+                    const itemPath = normalizePath(item.path || '');
+                    const safePath = escapeJsString(itemPath);
                     return `
                         <div class="tree-item">
-                            <div class="tree-row ${state.currentPath === item.path ? 'selected' : ''}"
-                                 onclick="selectSpell('${item.path}')"
-                                 oncontextmenu="showTreeContextMenu(event, 'spell', '${item.path}')">
+                            <div class="tree-row ${normalizePath(state.currentPath) === itemPath ? 'selected' : ''}"
+                                 onclick="selectSpell('${safePath}')"
+                                 oncontextmenu="showTreeContextMenu(event, 'spell', '${safePath}')"
+                                 draggable="true"
+                                 ondragstart="onSpellDragStart(event, '${safePath}')"
+                                 ondragend="onSpellDragEnd(event)">
                                 <span class="tree-expand"></span>
                                 <span class="tree-icon">📄</span>
                                 <span class="tree-name">${item.name}</span>
@@ -1083,9 +1297,10 @@
         }
 
         function toggleCategory(path) {
+            const targetPath = normalizePath(path);
             function toggle(items) {
                 for (const item of items) {
-                    if (item.path === path && item.type === 'category') {
+                    if (normalizePath(item.path) === targetPath && item.type === 'category') {
                         item.expanded = !item.expanded;
                         return true;
                     }
@@ -1097,15 +1312,138 @@
             renderTree();
         }
 
+        const dragState = {
+            expandTimers: {}
+        };
+
+        function clearAllExpandTimers() {
+            Object.keys(dragState.expandTimers).forEach(key => {
+                clearTimeout(dragState.expandTimers[key]);
+                delete dragState.expandTimers[key];
+            });
+        }
+
+        function onSpellDragStart(event, spellPath) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', normalizePath(spellPath));
+            event.currentTarget.classList.add('dragging');
+        }
+
+        function onSpellDragEnd(event) {
+            event.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.tree-row.drag-over').forEach(el => el.classList.remove('drag-over'));
+            clearAllExpandTimers();
+        }
+
+        function onCategoryDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            const row = event.currentTarget;
+            row.classList.add('drag-over');
+
+            const categoryPath = normalizePath(row.dataset.dropPath || '');
+            if (!categoryPath) return;
+
+            if (!dragState.expandTimers[categoryPath]) {
+                dragState.expandTimers[categoryPath] = setTimeout(() => {
+                    delete dragState.expandTimers[categoryPath];
+                    expandCategoryIfCollapsed(categoryPath);
+                }, 450);
+            }
+        }
+
+        function onCategoryDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+            const categoryPath = normalizePath(event.currentTarget.dataset.dropPath || '');
+            if (categoryPath && dragState.expandTimers[categoryPath]) {
+                clearTimeout(dragState.expandTimers[categoryPath]);
+                delete dragState.expandTimers[categoryPath];
+            }
+        }
+
+        function expandCategoryIfCollapsed(path) {
+            let changed = false;
+            function walk(items) {
+                for (const item of items || []) {
+                    if (item.type === 'category' && normalizePath(item.path) === path) {
+                        if (!item.expanded) {
+                            item.expanded = true;
+                            changed = true;
+                        }
+                        return true;
+                    }
+                    if (item.children && walk(item.children)) return true;
+                }
+                return false;
+            }
+            walk(state.tree);
+            if (changed) {
+                renderTree();
+            }
+        }
+
+        async function moveSpellToCategory(fromPath, toCategoryPath) {
+            const from = normalizePath(fromPath);
+            const to = normalizePath(toCategoryPath || '');
+            try {
+                const result = await callApi('wc3_move_spell', {
+                    fromPath: from,
+                    toCategoryPath: to
+                });
+                if (result.success) {
+                    showToast(result.message || '移动成功', 'success');
+                    if (normalizePath(state.currentPath) === from) {
+                        state.currentPath = normalizePath(result.data?.path || state.currentPath);
+                        document.getElementById('currentPath').textContent = state.currentPath || '未保存';
+                    }
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '移动失败', 'error');
+                }
+            } catch (e) {
+                showToast('移动失败: ' + e.message, 'error');
+            }
+        }
+
+        async function onCategoryDrop(event, categoryPath) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            clearAllExpandTimers();
+
+            const fromPath = normalizePath(event.dataTransfer.getData('text/plain'));
+            if (!fromPath) return;
+            await moveSpellToCategory(fromPath, categoryPath);
+        }
+
+        function onRootDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function onRootDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        async function onRootDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            clearAllExpandTimers();
+
+            const fromPath = normalizePath(event.dataTransfer.getData('text/plain'));
+            if (!fromPath) return;
+            await moveSpellToCategory(fromPath, '');
+        }
+
         async function selectSpell(path) {
             try {
                 const result = await callApi('wc3_load_spell', {path});
                 if (result.success) {
-                    state.currentSpell = result.data;
-                    state.currentPath = path;
-                    loadSpellToForm(result.data);
+                    state.currentSpell = migrateData(result.data);
+                    state.currentPath = normalizePath(path);
+                    loadSpellToForm(state.currentSpell);
                     renderTree();
-                    document.getElementById('currentPath').textContent = path;
+                    document.getElementById('currentPath').textContent = state.currentPath;
                 } else {
                     showToast(result.message || '加载失败', 'error');
                 }
@@ -1116,7 +1454,67 @@
 
         function showTreeContextMenu(event, type, path) {
             event.preventDefault();
-            // 简化处理：双击或右键可扩展更多功能
+            // 预留扩展
+        }
+
+        function reverseEngineerParamsFromVals(vals) {
+            if (!Array.isArray(vals) || vals.length === 0) return '';
+            const keys = Object.keys(vals[0] || {});
+            if (keys.length === 0) return '';
+
+            const params = {};
+            keys.forEach(key => {
+                const series = vals.map(v => v?.[key]);
+                if (series.length < 2) {
+                    params[key] = String(series[0] ?? '');
+                    return;
+                }
+                const nums = series.map(v => Number(v));
+                const allNum = nums.every(v => !Number.isNaN(v));
+                if (allNum) {
+                    const diff = nums[1] - nums[0];
+                    const isArithmetic = nums.every((v, i) => i < 2 || v - nums[i - 1] === diff);
+                    if (isArithmetic && diff !== 0) {
+                        params[key] = `${nums[0]}+${diff}`;
+                        return;
+                    }
+                }
+                params[key] = series.map(v => String(v ?? '')).join(',');
+            });
+
+            return paramsToSaveFormat(vals.length, params);
+        }
+
+        function migrateData(data) {
+            const migrated = {...defaultSpellData, ...(data || {})};
+            migrated.level = parseInt(migrated.level ?? migrated.lv ?? 1) || 1;
+            migrated.lv = migrated.level;
+
+            if (!Array.isArray(migrated.pros)) {
+                migrated.pros = [{name: '法力消耗', val: ''}];
+            }
+            if (!migrated.updateWord || typeof migrated.updateWord !== 'object') {
+                migrated.updateWord = {text: '', vals: []};
+            }
+            if (!migrated.normalWord || typeof migrated.normalWord !== 'object') {
+                migrated.normalWord = {text: '', vals: []};
+            }
+
+            let valueParams = String(migrated.valueParams || '').trim();
+            if (!valueParams) {
+                const oldUpdate = String(migrated.updateWordVals || '').trim();
+                const oldNormal = String(migrated.normalWordVals || '').trim();
+                valueParams = oldUpdate || oldNormal;
+            }
+            if (!valueParams) {
+                valueParams = reverseEngineerParamsFromVals(migrated.updateWord.vals) ||
+                    reverseEngineerParamsFromVals(migrated.normalWord.vals) ||
+                    'lv=1';
+            }
+
+            const parsed = parseValueParams(valueParams);
+            migrated.valueParams = paramsToSaveFormat(parsed.lv, parsed.params);
+            return migrated;
         }
 
         // ============================================================================
@@ -1126,10 +1524,12 @@
             document.getElementById('spellId').value = data.id || 'A000';
             document.getElementById('spellName').value = data.name || '';
             document.getElementById('spellHotKey').value = data.hotKey || '';
+            document.getElementById('spellLevel').value = data.level || data.lv || 1;
             document.getElementById('spellEffect').value = data.effect || '';
             document.getElementById('spellNature').value = data.nature || '';
             document.getElementById('updateWordText').value = data.updateWord?.text || '';
             document.getElementById('normalWordText').value = data.normalWord?.text || '';
+            document.getElementById('valueParams').value = data.valueParams || 'lv=1';
 
             // 属性列表
             renderPropertyList(data.pros || []);
@@ -1140,13 +1540,16 @@
 
         function getSpellFromForm() {
             const updateWordText = document.getElementById('updateWordText').value;
-            const updateWordVals = document.getElementById('updateWordVals').value;
             const normalWordText = document.getElementById('normalWordText').value;
-            const normalWordVals = document.getElementById('normalWordVals').value;
+            const valueParamsStr = document.getElementById('valueParams').value;
+            const parsed = parseValueParams(valueParamsStr);
+            const vals = generateValues(parsed.lv, parsed.params);
+            const level = parseInt(document.getElementById('spellLevel').value) || 1;
 
             return {
                 id: document.getElementById('spellId').value || 'A000',
-                lv: state.level,
+                lv: level,
+                level: level,
                 name: document.getElementById('spellName').value,
                 hotKey: document.getElementById('spellHotKey').value,
                 effect: document.getElementById('spellEffect').value,
@@ -1154,12 +1557,13 @@
                 pros: getPropertyList(),
                 updateWord: {
                     text: updateWordText,
-                    vals: conversion(updateWordVals)
+                    vals: vals
                 },
                 normalWord: {
                     text: normalWordText,
-                    vals: conversion(normalWordVals)
-                }
+                    vals: vals
+                },
+                valueParams: paramsToSaveFormat(parsed.lv, parsed.params)
             };
         }
 
@@ -1168,12 +1572,23 @@
             state.currentSpell = spell;
 
             // 更新等级选择器
-            const maxLv = Math.max(spell.updateWord.vals.length, spell.normalWord.vals.length, 1);
+            const parsed = parseValueParams(spell.valueParams);
+            const maxLv = Math.max(parsed.lv, 1);
             state.maxLevel = maxLv;
+            if (state.level > maxLv) state.level = maxLv;
             renderLevelSelector(maxLv);
 
             // 更新预览
             renderSpellPreview();
+        }
+
+        function onSpellLevelChange() {
+            const levelInput = document.getElementById('spellLevel');
+            let level = parseInt(levelInput.value) || 1;
+            if (level < 1) level = 1;
+            if (level > 10) level = 10;
+            levelInput.value = level;
+            onSpellDataChange();
         }
 
         function renderLevelSelector(maxLv) {
@@ -1216,7 +1631,10 @@
             const container = document.getElementById('propertyList');
             container.innerHTML = pros.map((p, i) => `
                 <div class="property-item">
-                    <input type="text" class="form-input" value="${p.name || ''}" placeholder="属性名" onchange="updatePropertyName(${i}, this.value)">
+                    <div class="property-name-wrap">
+                        <input type="text" class="form-input property-name-input" value="${escapeAttr(p.name || '')}" placeholder="属性名" onfocus="showPropertySuggestions(${i})" oninput="onPropertyNameInput(this, ${i})">
+                        <div class="property-suggest-list" id="propertySuggestList_${i}"></div>
+                    </div>
                     <input type="text" class="form-input" value="${p.val || ''}" placeholder="值" onchange="updatePropertyValue(${i}, this.value)">
                     <button class="property-remove" onclick="removeProperty(${i})">✕</button>
                 </div>
@@ -1237,11 +1655,15 @@
             const div = document.createElement('div');
             div.className = 'property-item';
             div.innerHTML = `
-                <input type="text" class="form-input" placeholder="属性名" onchange="onSpellDataChange()">
+                <div class="property-name-wrap">
+                    <input type="text" class="form-input property-name-input" placeholder="属性名" onfocus="showPropertySuggestions(${index})" oninput="onPropertyNameInput(this, ${index})">
+                    <div class="property-suggest-list" id="propertySuggestList_${index}"></div>
+                </div>
                 <input type="text" class="form-input" placeholder="值" onchange="onSpellDataChange()">
                 <button class="property-remove" onclick="removeProperty(${index})">✕</button>
             `;
             container.appendChild(div);
+            showPropertySuggestions(index);
         }
 
         function removeProperty(index) {
@@ -1260,6 +1682,62 @@
             onSpellDataChange();
         }
 
+        function getSpellProSuggestions() {
+            const list = dedupeStringsKeepOrder(state.settings?.spellProSuggestions || []);
+            if (list.length > 0) return list;
+            return [...defaultSpellProSuggestionList];
+        }
+
+        function onPropertyNameInput(inputEl, index) {
+            onSpellDataChange();
+            showPropertySuggestions(index, inputEl.value || '');
+        }
+
+        function showPropertySuggestions(index, keyword = null) {
+            const listEl = document.getElementById(`propertySuggestList_${index}`);
+            const allItems = document.querySelectorAll('.property-item');
+            const row = allItems[index];
+            if (!listEl || !row) return;
+            const input = row.querySelector('.property-name-input');
+            if (!input) return;
+
+            const query = (keyword === null ? input.value : keyword).trim().toLowerCase();
+            const candidates = getSpellProSuggestions().filter(name => {
+                if (!query) return true;
+                return name.toLowerCase().includes(query);
+            });
+
+            if (candidates.length === 0) {
+                listEl.classList.remove('active');
+                listEl.innerHTML = '';
+                return;
+            }
+
+            listEl.innerHTML = candidates.map(name => (
+                `<div class="property-suggest-item" onmousedown="selectPropertySuggestion(${index}, '${escapeJsString(name)}')">${escapeHtml(name)}</div>`
+            )).join('');
+            listEl.classList.add('active');
+        }
+
+        function selectPropertySuggestion(index, name) {
+            const allItems = document.querySelectorAll('.property-item');
+            const row = allItems[index];
+            if (!row) return;
+            const input = row.querySelector('.property-name-input');
+            const listEl = document.getElementById(`propertySuggestList_${index}`);
+            if (input) {
+                input.value = name;
+            }
+            if (listEl) {
+                listEl.classList.remove('active');
+            }
+            onSpellDataChange();
+        }
+
+        function hideAllPropertySuggestLists() {
+            document.querySelectorAll('.property-suggest-list.active').forEach(el => el.classList.remove('active'));
+        }
+
         // ============================================================================
         // 技能预览渲染
         // ============================================================================
@@ -1274,6 +1752,8 @@
             const colors = state.colorConfig;
             const lv = state.level;
             const mode = state.mode;
+            const parsed = parseValueParams(spell.valueParams || '');
+            const vals = generateValues(parsed.lv, parsed.params);
 
             let html = '';
             if (mode === 'learn') {
@@ -1298,8 +1778,8 @@
                 });
 
                 // 升级描述
-                if (spell.updateWord?.vals?.length > 0) {
-                    spell.updateWord.vals.forEach((v, i) => {
+                if (spell.updateWord?.text && vals.length > 0) {
+                    vals.forEach((v, i) => {
                         let text = spell.updateWord.text.format(v);
                         if (!text.endsWith('。')) text += '。';
                         html += `<br><span style="color:${colors.learnUpdateLevel}">${i + 1}级</span> - ${text}`;
@@ -1315,9 +1795,8 @@
                 html += ` - [<span style="color:${colors.learnLevel}">${lv}级</span>]</p><hr>`;
 
                 let normalText = spell.normalWord?.text || '';
-                const normalVals = spell.normalWord?.vals || [];
-                if (normalText && normalVals[lv - 1]) {
-                    normalText = normalText.format(normalVals[lv - 1]);
+                if (normalText && vals[lv - 1]) {
+                    normalText = normalText.format(vals[lv - 1]);
                 }
                 if (!normalText.endsWith('。') && normalText) normalText += '。';
                 html += `<p>${normalText}`;
@@ -1355,6 +1834,8 @@
             const colors = state.colorConfig;
             const result = document.getElementById('generateResult');
             let html = '';
+            const parsed = parseValueParams(spell.valueParams || '');
+            const vals = generateValues(parsed.lv, parsed.params);
 
             // 学习标题
             let learnTitle = `学习 ${dyeing('%d 级', colors.learnLevel)} ${spell.name}`;
@@ -1371,9 +1852,9 @@
                     learnExport += `\n${dyeing(p.name, colors.property)}：${p.val}`;
                 }
             });
-            if (spell.updateWord?.vals?.length > 0) {
+            if (spell.updateWord?.text && vals.length > 0) {
                 learnExport += '\n';
-                spell.updateWord.vals.forEach((v, i) => {
+                vals.forEach((v, i) => {
                     let text = spell.updateWord.text.format(v);
                     if (!text.endsWith('。')) text += '。';
                     learnExport += `\n${dyeing((i + 1) + '级', colors.learnUpdateLevel)} - ${text}`;
@@ -1382,7 +1863,7 @@
             html += createGenerateItem('学习扩展', learnExport);
 
             // 各等级
-            const maxLv = Math.max(spell.updateWord?.vals?.length || 1, spell.normalWord?.vals?.length || 1);
+            const maxLv = Math.max(vals.length, 1);
             for (let lv = 1; lv <= maxLv; lv++) {
                 // 标题
                 let title = `${spell.name}`;
@@ -1394,9 +1875,8 @@
 
                 // 扩展
                 let normalText = spell.normalWord?.text || '';
-                const normalVals = spell.normalWord?.vals || [];
-                if (normalText && normalVals[lv - 1]) {
-                    normalText = normalText.format(normalVals[lv - 1]);
+                if (normalText && vals[lv - 1]) {
+                    normalText = normalText.format(vals[lv - 1]);
                 }
                 if (!normalText.endsWith('。') && normalText) normalText += '。';
 
@@ -1461,7 +1941,7 @@
 
                 if (result.success) {
                     showToast('保存成功', 'success');
-                    state.currentPath = result.data?.path || path;
+                    state.currentPath = normalizePath(result.data?.path || path);
                     document.getElementById('currentPath').textContent = state.currentPath;
                     await refreshTree();
                 } else {
@@ -1497,7 +1977,7 @@
 
                 if (result.success) {
                     showToast('保存成功', 'success');
-                    state.currentPath = result.data?.path || path + '/' + name + '.json';
+                    state.currentPath = normalizePath(result.data?.path || path + '/' + name + '.json');
                     document.getElementById('currentPath').textContent = state.currentPath;
                     closeModal('saveAsModal');
                     await refreshTree();
@@ -1548,6 +2028,15 @@
             } catch (e) {
                 showToast('导入失败: ' + e.message, 'error');
             }
+        }
+
+        async function moveSpellToRoot() {
+            const fromPath = normalizePath(state.currentPath);
+            if (!fromPath) {
+                showToast('请先选择要移动的技能', 'error');
+                return;
+            }
+            await moveSpellToCategory(fromPath, '');
         }
 
         async function refreshTree() {
@@ -1684,6 +2173,67 @@
             }
         }
 
+        function renderSpellProSuggestionSettings() {
+            const container = document.getElementById('spellProSuggestionList');
+            if (!container) return;
+            const list = getSpellProSuggestions();
+            container.innerHTML = list.map((name, i) => `
+                <div class="setting-item">
+                    <input type="text" class="form-input spell-pro-setting-input" value="${escapeAttr(name)}" placeholder="属性名称">
+                    <button class="btn btn-small btn-danger" onclick="removeSpellProSuggestion(${i})">删除</button>
+                </div>
+            `).join('');
+        }
+
+        function getSpellProSuggestionSettingsFromForm() {
+            return dedupeStringsKeepOrder(Array.from(document.querySelectorAll('.spell-pro-setting-input')).map(input => input.value || ''));
+        }
+
+        function openSettingsModal() {
+            renderSpellProSuggestionSettings();
+            openModal('settingsModal');
+        }
+
+        function addSpellProSuggestion() {
+            const current = getSpellProSuggestionSettingsFromForm();
+            current.push('');
+            state.settings.spellProSuggestions = dedupeStringsKeepOrder(current);
+            renderSpellProSuggestionSettings();
+        }
+
+        function removeSpellProSuggestion(index) {
+            const current = getSpellProSuggestionSettingsFromForm();
+            if (index >= 0 && index < current.length) {
+                current.splice(index, 1);
+            }
+            state.settings.spellProSuggestions = dedupeStringsKeepOrder(current);
+            renderSpellProSuggestionSettings();
+        }
+
+        function resetSpellProSuggestions() {
+            state.settings.spellProSuggestions = [...defaultSpellProSuggestionList];
+            renderSpellProSuggestionSettings();
+        }
+
+        async function saveSettings() {
+            const spellProSuggestions = getSpellProSuggestionSettingsFromForm();
+            const finalList = spellProSuggestions.length > 0 ? spellProSuggestions : [...defaultSpellProSuggestionList];
+            try {
+                const result = await callApi('wc3_save_settings', {
+                    spellProSuggestions: finalList
+                });
+                if (result.success) {
+                    state.settings.spellProSuggestions = dedupeStringsKeepOrder(finalList);
+                    closeModal('settingsModal');
+                    showToast('设置保存成功', 'success');
+                } else {
+                    showToast(result.message || '设置保存失败', 'error');
+                }
+            } catch (e) {
+                showToast('设置保存失败: ' + e.message, 'error');
+            }
+        }
+
         function renderColorExamplePreview() {
             const preview = document.getElementById('colorExamplePreview');
             const colors = state.colorConfig;
@@ -1716,6 +2266,12 @@
             });
         }
 
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.property-name-wrap')) {
+                hideAllPropertySuggestLists();
+            }
+        });
+
         // ============================================================================
         // 初始化
         // ============================================================================
@@ -1735,12 +2291,17 @@
                     state.colorConfig = data.currentColorConfig || {...defaultColorConfig};
                     state.currentColorName = data.currentColorName || 'default';
                     state.settings = data.settings || {};
+                    state.settings.spellProSuggestions = dedupeStringsKeepOrder(state.settings.spellProSuggestions || defaultSpellProSuggestionList);
 
                     // 渲染UI
                     renderTree();
                     loadColorConfigToForm(state.colorConfig);
                     renderColorConfigSelect();
                     resetSpellData();
+
+                    const rawLevel = parseInt(data.defaultSpellData?.level ?? data.defaultSpellData?.lv ?? 1) || 1;
+                    const level = Math.min(Math.max(rawLevel, 1), 10);
+                    document.getElementById('spellLevel').value = level;
                 }
             } catch (e) {
                 console.error('初始化失败:', e);

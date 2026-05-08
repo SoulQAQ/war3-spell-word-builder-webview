@@ -32,7 +32,7 @@ if not exist "%MAIN_SCRIPT%" (
 )
 
 if not exist "%VENV_PY%" (
-    echo [INFO] Creating virtual environment with uv (Python 3.13)...
+    echo [INFO] Creating virtual environment with uv ^(Python 3.13^)...
     uv venv --python 3.13
     if errorlevel 1 (
         echo [ERROR] Failed to create virtual environment.
@@ -45,12 +45,15 @@ if not exist "%VENV_PY%" (
 
 echo [INFO] Installing dependencies with uv...
 if exist "%REQUIREMENTS%" (
-    uv pip install -r "%REQUIREMENTS%"
+    uv pip install --python "%VENV_PY%" -r "%REQUIREMENTS%"
     if errorlevel 1 (
         echo [ERROR] Failed to install dependencies.
         echo.
         pause
         exit /b 1
+    )
+    if exist "%REQUIREMENTS%" (
+        copy /y "%REQUIREMENTS%" "%VENV_DIR%\.requirements.snapshot" >nul
     )
 ) else (
     echo [ERROR] requirements.txt not found.
@@ -71,6 +74,5 @@ if not "%APP_EXIT%"=="0" (
     pause
     exit /b %APP_EXIT%
 )
-
 endlocal
 exit /b 0
