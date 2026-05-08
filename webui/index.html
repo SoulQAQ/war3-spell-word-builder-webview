@@ -598,6 +598,38 @@
             gap: 8px;
         }
 
+        .tree-context-menu {
+            position: fixed;
+            min-width: 140px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            z-index: 1200;
+            padding: 6px 0;
+            display: none;
+        }
+
+        .tree-context-menu.active {
+            display: block;
+        }
+
+        .tree-context-item {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tree-context-item:hover {
+            background: #f0f2f5;
+        }
+
+        .tree-context-item.danger {
+            color: var(--danger-color);
+        }
+
         /* 弹窗 */
         .modal-overlay {
             position: fixed;
@@ -1033,6 +1065,8 @@
         </div>
     </div>
 
+    <div class="tree-context-menu" id="treeContextMenu"></div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -1095,6 +1129,14 @@
             wc3_move_spell: ['move_spell'],
             wc3_create_category: ['create_category'],
             wc3_import_file: ['import_file'],
+            wc3_clone_category: ['clone_category'],
+            wc3_clone_spell: ['clone_spell'],
+            wc3_rename_category: ['rename_category'],
+            wc3_rename_spell: ['rename_spell'],
+            wc3_delete_category: ['delete_category'],
+            wc3_delete_spell: ['delete_spell'],
+            wc3_export_category: ['export_category'],
+            wc3_export_spell: ['export_spell'],
             wc3_save_color_config: ['save_color_config'],
             wc3_delete_color_config: ['delete_color_config'],
             wc3_save_settings: ['save_settings']
@@ -1630,7 +1672,231 @@
 
         function showTreeContextMenu(event, type, path) {
             event.preventDefault();
-            // 预留扩展
+            hideTreeContextMenu();
+
+            const normalizedPath = normalizePath(path || '');
+            if (!normalizedPath) return;
+
+            const menu = document.getElementById('treeContextMenu');
+            if (!menu) return;
+
+            const items = [];
+            if (type === 'category') {
+                items.push({label: '重命名', action: () => renameCategory(normalizedPath)});
+                items.push({label: '克隆', action: () => cloneCategory(normalizedPath)});
+                items.push({label: '导出', action: () => exportCategory(normalizedPath)});
+                items.push({label: '删除', danger: true, action: () => deleteCategory(normalizedPath)});
+            } else if (type === 'spell') {
+                items.push({label: '重命名', action: () => renameSpell(normalizedPath)});
+                items.push({label: '克隆', action: () => cloneSpell(normalizedPath)});
+                items.push({label: '导出', action: () => exportSpell(normalizedPath)});
+                items.push({label: '删除', danger: true, action: () => deleteSpell(normalizedPath)});
+            } else {
+                return;
+            }
+
+            menu.innerHTML = items.map((item, idx) => `
+                <div class="tree-context-item ${item.danger ? 'danger' : ''}" data-menu-index="${idx}">
+                    ${item.label}
+                </div>
+            `).join('');
+
+            menu.onclick = (e) => {
+                const row = e.target.closest('.tree-context-item');
+                if (!row) return;
+                const index = parseInt(row.dataset.menuIndex, 10);
+                hideTreeContextMenu();
+                if (!Number.isNaN(index) && items[index]?.action) {
+                    items[index].action();
+                }
+            };
+
+            menu.classList.add('active');
+            positionTreeContextMenu(menu, event.clientX, event.clientY);
+        }
+
+        function positionTreeContextMenu(menu, x, y) {
+            const margin = 6;
+            const menuRect = menu.getBoundingClientRect();
+            const maxLeft = window.innerWidth - menuRect.width - margin;
+            const maxTop = window.innerHeight - menuRect.height - margin;
+            const left = Math.max(margin, Math.min(x, maxLeft));
+            const top = Math.max(margin, Math.min(y, maxTop));
+            menu.style.left = `${left}px`;
+            menu.style.top = `${top}px`;
+        }
+
+        function hideTreeContextMenu() {
+            const menu = document.getElementById('treeContextMenu');
+            if (!menu) return;
+            menu.classList.remove('active');
+            menu.innerHTML = '';
+            menu.onclick = null;
+        }
+
+        function askNewName(title, currentName, fallbackName) {
+            const next = prompt(title, currentName || fallbackName || '');
+            if (next === null) return null;
+            const trimmed = String(next).trim();
+            if (!trimmed) {
+                showToast('名称不能为空', 'error');
+                return null;
+            }
+            return trimmed;
+        }
+
+        function getCategoryNameFromPath(path) {
+            const parts = normalizePath(path).split('/');
+            return parts[parts.length - 1] || '';
+        }
+
+        function getSpellFileNameFromPath(path) {
+            const parts = normalizePath(path).split('/');
+            const file = parts[parts.length - 1] || '';
+            return file.replace(/\.json$/i, '');
+        }
+
+        async function renameCategory(path) {
+            const currentName = getCategoryNameFromPath(path);
+            const newName = askNewName('重命名分类', currentName, currentName);
+            if (!newName || newName === currentName) return;
+            try {
+                const result = await callApi('wc3_rename_category', {path, newName});
+                if (result.success) {
+                    showToast(result.message || '重命名成功', 'success');
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '重命名失败', 'error');
+                }
+            } catch (e) {
+                showToast('重命名失败: ' + e.message, 'error');
+            }
+        }
+
+        async function cloneCategory(path) {
+            const currentName = getCategoryNameFromPath(path);
+            const suggested = `${currentName}_copy`;
+            const newName = askNewName('克隆分类（包含分类内所有技能）', suggested, suggested);
+            if (!newName) return;
+            try {
+                const result = await callApi('wc3_clone_category', {path, newName});
+                if (result.success) {
+                    showToast(result.message || '克隆成功', 'success');
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '克隆失败', 'error');
+                }
+            } catch (e) {
+                showToast('克隆失败: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteCategory(path) {
+            const name = getCategoryNameFromPath(path);
+            const ok = confirm(`确认删除分类“${name}”及其全部子分类和技能吗？`);
+            if (!ok) return;
+            try {
+                const result = await callApi('wc3_delete_category', {path});
+                if (result.success) {
+                    showToast(result.message || '删除成功', 'success');
+                    if (state.currentPath && normalizePath(state.currentPath).startsWith(normalizePath(path) + '/')) {
+                        resetSpellData();
+                    }
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '删除失败', 'error');
+                }
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        async function exportCategory(path) {
+            try {
+                const result = await callApi('wc3_export_category', {path});
+                if (result.success) {
+                    const exportPath = result.data?.exportPath ? `\n${result.data.exportPath}` : '';
+                    showToast((result.message || '导出成功') + exportPath, 'success');
+                } else {
+                    showToast(result.message || '导出失败', 'error');
+                }
+            } catch (e) {
+                showToast('导出失败: ' + e.message, 'error');
+            }
+        }
+
+        async function renameSpell(path) {
+            const currentName = getSpellFileNameFromPath(path);
+            const newName = askNewName('重命名技能', currentName, currentName);
+            if (!newName || newName === currentName) return;
+            try {
+                const result = await callApi('wc3_rename_spell', {path, newName});
+                if (result.success) {
+                    showToast(result.message || '重命名成功', 'success');
+                    if (normalizePath(state.currentPath) === normalizePath(path)) {
+                        const parent = normalizePath(path).split('/').slice(0, -1).join('/');
+                        state.currentPath = normalizePath(parent ? `${parent}/${newName}.json` : `${newName}.json`);
+                        document.getElementById('currentPath').textContent = state.currentPath;
+                    }
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '重命名失败', 'error');
+                }
+            } catch (e) {
+                showToast('重命名失败: ' + e.message, 'error');
+            }
+        }
+
+        async function cloneSpell(path) {
+            const currentName = getSpellFileNameFromPath(path);
+            const suggested = `${currentName}_copy`;
+            const newName = askNewName('克隆技能', suggested, suggested);
+            if (!newName) return;
+            try {
+                const result = await callApi('wc3_clone_spell', {path, newName});
+                if (result.success) {
+                    showToast(result.message || '克隆成功', 'success');
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '克隆失败', 'error');
+                }
+            } catch (e) {
+                showToast('克隆失败: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteSpell(path) {
+            const name = getSpellFileNameFromPath(path);
+            const ok = confirm(`确认删除技能“${name}”吗？`);
+            if (!ok) return;
+            try {
+                const result = await callApi('wc3_delete_spell', {path});
+                if (result.success) {
+                    showToast(result.message || '删除成功', 'success');
+                    if (normalizePath(state.currentPath) === normalizePath(path)) {
+                        resetSpellData();
+                    }
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '删除失败', 'error');
+                }
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        async function exportSpell(path) {
+            try {
+                const result = await callApi('wc3_export_spell', {path});
+                if (result.success) {
+                    const exportPath = result.data?.exportPath ? `\n${result.data.exportPath}` : '';
+                    showToast((result.message || '导出成功') + exportPath, 'success');
+                } else {
+                    showToast(result.message || '导出失败', 'error');
+                }
+            } catch (e) {
+                showToast('导出失败: ' + e.message, 'error');
+            }
         }
 
         function reverseEngineerParamsFromVals(vals) {
@@ -2446,6 +2712,15 @@
         document.addEventListener('click', (event) => {
             if (!event.target.closest('.property-name-wrap')) {
                 hideAllPropertySuggestLists();
+            }
+            if (!event.target.closest('#treeContextMenu')) {
+                hideTreeContextMenu();
+            }
+        });
+
+        document.addEventListener('contextmenu', (event) => {
+            if (!event.target.closest('.tree-row')) {
+                hideTreeContextMenu();
             }
         });
 

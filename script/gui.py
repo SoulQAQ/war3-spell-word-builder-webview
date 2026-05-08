@@ -942,6 +942,54 @@ class AppApi:
         except Exception as e:
             return {'success': False, 'message': f'重命名失败: {str(e)}'}
 
+    def wc3_clone_category(self, payload: dict) -> dict:
+        """
+        克隆分类（递归包含其中技能和子分类）
+        参数:
+            payload: {'path': str, 'newName': str}
+
+        返回:
+            dict: {'success': bool, 'message': str}
+        """
+        import shutil
+        try:
+            if not payload or 'path' not in payload or 'newName' not in payload:
+                return {'success': False, 'message': '参数缺失'}
+
+            rel_path = str(payload.get('path', '')).strip().replace('\\', '/')
+            new_name = str(payload.get('newName', '')).strip()
+
+            if not rel_path or not new_name:
+                return {'success': False, 'message': '路径或名称不能为空'}
+            if '..' in rel_path or '..' in new_name:
+                return {'success': False, 'message': '无效的路径'}
+            if '/' in new_name or '\\' in new_name:
+                return {'success': False, 'message': '名称不能包含路径分隔符'}
+
+            source_path = (SPELLS_DIR / rel_path).resolve()
+            spells_root = SPELLS_DIR.resolve()
+            try:
+                source_path.relative_to(spells_root)
+            except Exception:
+                return {'success': False, 'message': '路径越界'}
+
+            if not source_path.exists() or not source_path.is_dir():
+                return {'success': False, 'message': '分类不存在'}
+
+            target_path = (source_path.parent / new_name).resolve()
+            try:
+                target_path.relative_to(spells_root)
+            except Exception:
+                return {'success': False, 'message': '目标路径越界'}
+
+            if target_path.exists():
+                return {'success': False, 'message': '目标名称已存在'}
+
+            shutil.copytree(source_path, target_path)
+            return {'success': True, 'message': '分类克隆成功'}
+        except Exception as e:
+            return {'success': False, 'message': f'克隆分类失败: {str(e)}'}
+
     def wc3_save_spell(self, payload: dict) -> dict:
         """
         保存技能数据
@@ -1101,6 +1149,66 @@ class AppApi:
         except Exception as e:
             return {'success': False, 'message': f'重命名失败: {str(e)}'}
 
+    def wc3_clone_spell(self, payload: dict) -> dict:
+        """
+        克隆技能文件
+        参数:
+            payload: {'path': str, 'newName': str}
+
+        返回:
+            dict: {'success': bool, 'message': str}
+        """
+        import json
+        import shutil
+        try:
+            if not payload or 'path' not in payload or 'newName' not in payload:
+                return {'success': False, 'message': '参数缺失'}
+
+            rel_path = str(payload.get('path', '')).strip().replace('\\', '/')
+            new_name = str(payload.get('newName', '')).strip()
+
+            if not rel_path or not new_name:
+                return {'success': False, 'message': '路径或名称不能为空'}
+            if '..' in rel_path or '..' in new_name:
+                return {'success': False, 'message': '无效的路径'}
+            if '/' in new_name or '\\' in new_name:
+                return {'success': False, 'message': '名称不能包含路径分隔符'}
+
+            source_path = (SPELLS_DIR / rel_path).resolve()
+            spells_root = SPELLS_DIR.resolve()
+            try:
+                source_path.relative_to(spells_root)
+            except Exception:
+                return {'success': False, 'message': '路径越界'}
+
+            if not source_path.exists() or not source_path.is_file():
+                return {'success': False, 'message': '技能文件不存在'}
+
+            target_path = (source_path.parent / f'{new_name}.json').resolve()
+            try:
+                target_path.relative_to(spells_root)
+            except Exception:
+                return {'success': False, 'message': '目标路径越界'}
+
+            if target_path.exists():
+                return {'success': False, 'message': '目标名称已存在'}
+
+            shutil.copy2(source_path, target_path)
+
+            try:
+                with open(target_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    data['name'] = new_name
+                    with open(target_path, 'w', encoding='utf-8') as f:
+                        json.dump(data, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+            return {'success': True, 'message': '技能克隆成功'}
+        except Exception as e:
+            return {'success': False, 'message': f'克隆技能失败: {str(e)}'}
+
     def wc3_move_spell(self, payload: dict) -> dict:
         """
         移动技能文件到目标分类
@@ -1240,6 +1348,62 @@ class AppApi:
             }
         except Exception as e:
             return {'success': False, 'message': f'导出失败: {str(e)}'}
+
+    def wc3_export_spell(self, payload: dict) -> dict:
+        """
+        导出单个技能到JSON文件
+
+        参数:
+            payload: {'path': str}
+
+        返回:
+            dict: {'success': bool, 'message': str, 'data': {'exportPath': str}}
+        """
+        import json
+        from datetime import datetime
+
+        try:
+            if not payload or 'path' not in payload:
+                return {'success': False, 'message': '路径参数缺失'}
+
+            rel_path = str(payload.get('path', '')).strip().replace('\\', '/')
+            if not rel_path:
+                return {'success': False, 'message': '路径不能为空'}
+            if '..' in rel_path:
+                return {'success': False, 'message': '无效的路径'}
+
+            source_path = (SPELLS_DIR / rel_path).resolve()
+            spells_root = SPELLS_DIR.resolve()
+            try:
+                source_path.relative_to(spells_root)
+            except Exception:
+                return {'success': False, 'message': '路径越界'}
+
+            if not source_path.exists() or not source_path.is_file():
+                return {'success': False, 'message': '技能文件不存在'}
+
+            with open(source_path, 'r', encoding='utf-8') as f:
+                spell_data = json.load(f)
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            export_name = f'{source_path.stem}_{timestamp}.json'
+            export_path = EXPORTS_DIR / export_name
+
+            export_data = {
+                'path': rel_path,
+                'exportTime': timestamp,
+                'spell': spell_data
+            }
+            with open(export_path, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, ensure_ascii=False, indent=2)
+
+            return {
+                'success': True,
+                'message': '导出技能成功',
+                'data': {'exportPath': str(export_path)}
+            }
+        except Exception as e:
+            return {'success': False, 'message': f'导出技能失败: {str(e)}'}
 
     def wc3_import_file(self, payload: dict) -> dict:
         """
@@ -1544,6 +1708,30 @@ class AppApi:
 
     def import_file(self, payload: dict) -> dict:
         return self.wc3_import_file(payload)
+
+    def clone_category(self, payload: dict) -> dict:
+        return self.wc3_clone_category(payload)
+
+    def clone_spell(self, payload: dict) -> dict:
+        return self.wc3_clone_spell(payload)
+
+    def rename_category(self, payload: dict) -> dict:
+        return self.wc3_rename_category(payload)
+
+    def rename_spell(self, payload: dict) -> dict:
+        return self.wc3_rename_spell(payload)
+
+    def delete_category(self, payload: dict) -> dict:
+        return self.wc3_delete_category(payload)
+
+    def delete_spell(self, payload: dict) -> dict:
+        return self.wc3_delete_spell(payload)
+
+    def export_category(self, payload: dict) -> dict:
+        return self.wc3_export_category(payload)
+
+    def export_spell(self, payload: dict) -> dict:
+        return self.wc3_export_spell(payload)
 
     def save_color_config(self, payload: dict) -> dict:
         return self.wc3_save_color_config(payload)
