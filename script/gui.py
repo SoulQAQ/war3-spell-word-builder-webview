@@ -252,7 +252,7 @@ class AppApi:
     """
     
     def __init__(self):
-        self.window = None
+        self._window = None
         self._drop_bound = False
 
     def _handle_native_drop(self, event: dict):
@@ -270,7 +270,7 @@ class AppApi:
             if paths:
                 payload = json.dumps(paths, ensure_ascii=False)
                 # 调用前端函数，避免浏览器层无法拿到本地路径
-                self.window.evaluate_js(f'window.handleNativeDrop({payload});')
+                self._window.evaluate_js(f'window.handleNativeDrop({payload});')
         except Exception as e:
             print(f'处理拖拽事件失败: {e}')
     
@@ -334,10 +334,10 @@ class AppApi:
             dict: {'success': bool, 'data': {'files': list[str]}}
         """
         try:
-            if self.window is None:
+            if self._window is None:
                 return {'success': False, 'data': None, 'message': '窗口未初始化'}
             
-            files = self.window.create_file_dialog(
+            files = self._window.create_file_dialog(
                 webview.OPEN_DIALOG,
                 allow_multiple=True,
                 file_types=('所有文件 (*.*)', '压缩文件 (*.7z;*.zip;*.rar)')
@@ -368,10 +368,10 @@ class AppApi:
             dict: {'success': bool, 'data': {'folder': str}}
         """
         try:
-            if self.window is None:
+            if self._window is None:
                 return {'success': False, 'data': None, 'message': '窗口未初始化'}
             
-            folders = self.window.create_file_dialog(webview.FOLDER_DIALOG)
+            folders = self._window.create_file_dialog(webview.FOLDER_DIALOG)
             
             if folders:
                 return {
@@ -398,10 +398,10 @@ class AppApi:
             dict: {'success': bool, 'data': {'output_dir': str}}
         """
         try:
-            if self.window is None:
+            if self._window is None:
                 return {'success': False, 'data': None, 'message': '窗口未初始化'}
             
-            folders = self.window.create_file_dialog(webview.FOLDER_DIALOG)
+            folders = self._window.create_file_dialog(webview.FOLDER_DIALOG)
             
             if folders:
                 return {
@@ -1255,10 +1255,10 @@ class AppApi:
         try:
             # 如果没有提供文件路径，打开文件选择对话框
             if not payload or 'filePath' not in payload:
-                if self.window is None:
+                if self._window is None:
                     return {'success': False, 'message': '窗口未初始化'}
 
-                files = self.window.create_file_dialog(
+                files = self._window.create_file_dialog(
                     webview.OPEN_DIALOG,
                     allow_multiple=False,
                     file_types=('JSON文件 (*.json)',)
@@ -1530,6 +1530,27 @@ class AppApi:
     def get_initial_state_v2(self, payload=None) -> dict:
         return self.wc3_get_initial_state(payload)
 
+    def save_spell(self, payload: dict) -> dict:
+        return self.wc3_save_spell(payload)
+
+    def load_spell(self, payload: dict) -> dict:
+        return self.wc3_load_spell(payload)
+
+    def move_spell(self, payload: dict) -> dict:
+        return self.wc3_move_spell(payload)
+
+    def create_category(self, payload: dict) -> dict:
+        return self.wc3_create_category(payload)
+
+    def import_file(self, payload: dict) -> dict:
+        return self.wc3_import_file(payload)
+
+    def save_color_config(self, payload: dict) -> dict:
+        return self.wc3_save_color_config(payload)
+
+    def delete_color_config(self, payload: dict) -> dict:
+        return self.wc3_delete_color_config(payload)
+
     def wc3_get_initial_state(self, payload=None) -> dict:
         """
         获取WC3生成器初始状态
@@ -1621,7 +1642,7 @@ def main():
         text_select=True,
     )
 
-    api.window = window
+    api._window = window
 
     def on_loaded():
         # 绑定 drop 事件（仅绑定一次）

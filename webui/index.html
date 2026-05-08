@@ -858,9 +858,9 @@
                             </div>
                             <div class="form-item">
                                 <label class="form-label">数值参数</label>
-                                <input type="text" class="form-input" id="valueParams" placeholder="例：lv=3；d=100+110；t=3+1" oninput="onSpellDataChange()">
+                                <input type="text" class="form-input" id="valueParams" placeholder="例：d=100+110；t=3+1" oninput="onSpellDataChange()">
                                 <span style="font-size: 11px; color: var(--text-placeholder); margin-top: 4px; display: block;">
-                                    格式：lv=等级数；参数=基础值+增量 或 参数=值1,值2,值3
+                                    格式：参数=基础值+增量 或 参数=值1,值2,值3（兼容旧格式中的 lv=）
                                 </span>
                             </div>
                         </div>
@@ -1089,7 +1089,15 @@
             wc3_get_initial_state: ['get_initial_state', 'get_initial_state_wc3', 'get_initial_state_v2'],
             wc3_get_spell_tree: ['get_spell_tree'],
             wc3_get_color_configs: ['get_color_configs'],
-            wc3_get_settings: ['get_settings']
+            wc3_get_settings: ['get_settings'],
+            wc3_save_spell: ['save_spell'],
+            wc3_load_spell: ['load_spell'],
+            wc3_move_spell: ['move_spell'],
+            wc3_create_category: ['create_category'],
+            wc3_import_file: ['import_file'],
+            wc3_save_color_config: ['save_color_config'],
+            wc3_delete_color_config: ['delete_color_config'],
+            wc3_save_settings: ['save_settings']
         };
 
         function toCamelCase(name) {
@@ -1391,8 +1399,8 @@
             return result;
         }
 
-        function paramsToSaveFormat(lv, params) {
-            const parts = [`lv=${Math.max(parseInt(lv) || 1, 1)}`];
+        function paramsToSaveFormat(params) {
+            const parts = [];
             Object.keys(params || {}).forEach(key => {
                 const val = String(params[key] || '').trim();
                 if (!key || !val) return;
@@ -1650,7 +1658,7 @@
                 params[key] = series.map(v => String(v ?? '')).join(',');
             });
 
-            return paramsToSaveFormat(vals.length, params);
+            return paramsToSaveFormat(params);
         }
 
         function migrateData(data) {
@@ -1677,11 +1685,11 @@
             if (!valueParams) {
                 valueParams = reverseEngineerParamsFromVals(migrated.updateWord.vals) ||
                     reverseEngineerParamsFromVals(migrated.normalWord.vals) ||
-                    'lv=1';
+                    '';
             }
 
             const parsed = parseValueParams(valueParams);
-            migrated.valueParams = paramsToSaveFormat(parsed.lv, parsed.params);
+            migrated.valueParams = paramsToSaveFormat(parsed.params);
             return migrated;
         }
 
@@ -1697,7 +1705,7 @@
             document.getElementById('spellNature').value = data.nature || '';
             document.getElementById('updateWordText').value = data.updateWord?.text || '';
             document.getElementById('normalWordText').value = data.normalWord?.text || '';
-            document.getElementById('valueParams').value = data.valueParams || 'lv=1';
+            document.getElementById('valueParams').value = data.valueParams || '';
 
             // 属性列表
             renderPropertyList(data.pros || []);
@@ -1711,8 +1719,8 @@
             const normalWordText = document.getElementById('normalWordText').value;
             const valueParamsStr = document.getElementById('valueParams').value;
             const parsed = parseValueParams(valueParamsStr);
-            const vals = generateValues(parsed.lv, parsed.params);
             const level = parseInt(document.getElementById('spellLevel').value) || 1;
+            const vals = generateValues(level, parsed.params);
 
             return {
                 id: document.getElementById('spellId').value || 'A000',
@@ -1731,7 +1739,7 @@
                     text: normalWordText,
                     vals: vals
                 },
-                valueParams: paramsToSaveFormat(parsed.lv, parsed.params)
+                valueParams: paramsToSaveFormat(parsed.params)
             };
         }
 
@@ -1740,8 +1748,7 @@
             state.currentSpell = spell;
 
             // 更新等级选择器
-            const parsed = parseValueParams(spell.valueParams);
-            const maxLv = Math.max(parsed.lv, 1);
+            const maxLv = Math.max(parseInt(spell.level ?? spell.lv ?? 1) || 1, 1);
             state.maxLevel = maxLv;
             if (state.level > maxLv) state.level = maxLv;
             renderLevelSelector(maxLv);
@@ -1921,7 +1928,8 @@
             const lv = state.level;
             const mode = state.mode;
             const parsed = parseValueParams(spell.valueParams || '');
-            const vals = generateValues(parsed.lv, parsed.params);
+            const totalLevel = Math.max(parseInt(spell.level ?? spell.lv ?? 1) || 1, 1);
+            const vals = generateValues(totalLevel, parsed.params);
 
             let html = '';
             if (mode === 'learn') {
@@ -2003,7 +2011,8 @@
             const result = document.getElementById('generateResult');
             let html = '';
             const parsed = parseValueParams(spell.valueParams || '');
-            const vals = generateValues(parsed.lv, parsed.params);
+            const totalLevel = Math.max(parseInt(spell.level ?? spell.lv ?? 1) || 1, 1);
+            const vals = generateValues(totalLevel, parsed.params);
 
             // 学习标题
             let learnTitle = `学习 ${dyeing('%d 级', colors.learnLevel)} ${spell.name}`;
