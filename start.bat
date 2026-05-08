@@ -3,6 +3,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
 cd /d "%~dp0"
+title WC3 Skill Text Generator
 
 set "VENV_DIR=.venv"
 set "VENV_PY=%VENV_DIR%\Scripts\python.exe"
@@ -11,7 +12,7 @@ set "REQUIREMENTS=requirements.txt"
 set "SNAPSHOT_FILE=%VENV_DIR%\.requirements.snapshot"
 set "SETUP_SCRIPT=setup.bat"
 
-:: 检查是否需要重新安装依赖
+:: Check if setup is needed
 set "NEED_SETUP="
 if not exist "%VENV_PY%" set "NEED_SETUP=1"
 if not exist "%SNAPSHOT_FILE%" set "NEED_SETUP=1"
@@ -21,9 +22,14 @@ if exist "%REQUIREMENTS%" (
 )
 
 if defined NEED_SETUP (
-    echo [信息] 检测到环境变化，正在准备环境...
+    echo [INFO] Environment change detected, running setup...
     call "%SETUP_SCRIPT%"
+    if errorlevel 1 (
+        echo [ERROR] Setup failed.
+        pause
+        exit /b 1
+    )
 )
 
-:: 启动应用
+:: Start application
 "%VENV_PY%" "%MAIN_SCRIPT%"

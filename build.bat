@@ -3,33 +3,60 @@ setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
 cd /d "%~dp0"
+title WC3 Skill Text Generator - Build
 
 set "VENV_PY=.venv\Scripts\python.exe"
 set "MAIN_SCRIPT=script\gui.py"
-set "APP_NAME=自动打包器"
+set "APP_NAME=WC3 Skill Text Generator"
 
-:: 1. 调用 setup.bat 确保环境就绪
-echo [信息] 正在检查环境...
+echo ========================================
+echo   WC3 Skill Text Generator - Build
+echo ========================================
+echo.
+
+:: 1. Run setup to ensure environment is ready
+echo [INFO] Checking environment...
 call setup.bat
+if errorlevel 1 (
+    echo [ERROR] Setup failed.
+    pause
+    exit /b 1
+)
 
-:: 2. 安装 PyInstaller
-echo [信息] 正在安装 PyInstaller...
-"%VENV_PY%" -m pip install pyinstaller
+:: 2. Install PyInstaller
+echo [INFO] Installing PyInstaller...
+"%VENV_PY%" -m pip install pyinstaller >nul 2>nul
 
-:: 3. 清理旧文件
+:: 3. Clean old files
 if exist "build" (
-    echo [信息] 正在清理 build 目录...
+    echo [INFO] Cleaning build directory...
     rmdir /s /q "build"
 )
 if exist "dist" (
-    echo [信息] 正在清理 dist 目录...
+    echo [INFO] Cleaning dist directory...
     rmdir /s /q "dist"
 )
 
-:: 4. 执行打包
-echo [信息] 正在打包，请稍候...
-"%VENV_PY%" -m PyInstaller "自动打包器.spec"
+:: 4. Build
+echo [INFO] Building executable...
+"%VENV_PY%" -m PyInstaller ^
+  --noconfirm ^
+  --clean ^
+  --onefile ^
+  --windowed ^
+  --name "WC3 Skill Text Generator" ^
+  --add-data "webui;webui" ^
+  --add-data "config;config" ^
+  --add-data "app.ico;." ^
+  --icon "app.ico" ^
+  "%MAIN_SCRIPT%"
+
+if errorlevel 1 (
+    echo [ERROR] Build failed.
+    pause
+    exit /b 1
+)
 
 echo.
-echo [成功] 打包完成：dist\%APP_NAME%.exe
+echo [SUCCESS] Build complete: dist\WC3 Skill Text Generator.exe
 pause
