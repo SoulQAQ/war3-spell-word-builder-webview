@@ -236,6 +236,19 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            overflow: hidden;
+        }
+
+        .edit-left > .form-item:first-child {
+            flex: 0 1 50%;
+            max-height: 50%;
+            min-height: 120px;
+            overflow-y: auto;
+        }
+
+        .edit-left > .form-item:not(:first-child) {
+            flex: 1 1 auto;
+            min-height: 0;
             overflow-y: auto;
         }
 
