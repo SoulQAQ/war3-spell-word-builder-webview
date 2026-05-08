@@ -1511,6 +1511,16 @@ class AppApi:
         except Exception as e:
             return {'success': False, 'message': f'保存设置失败: {str(e)}'}
 
+    # Compatibility aliases for frontend method naming differences.
+    def get_spell_tree(self, payload=None) -> dict:
+        return self.wc3_get_spell_tree(payload)
+
+    def get_color_configs(self, payload=None) -> dict:
+        return self.wc3_get_color_configs(payload)
+
+    def get_settings(self, payload=None) -> dict:
+        return self.wc3_get_settings(payload)
+
     def wc3_get_initial_state(self, payload=None) -> dict:
         """
         获取WC3生成器初始状态

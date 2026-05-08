@@ -1057,20 +1057,52 @@
         // ============================================================================
         // API调用
         // ============================================================================
-        async function callApi(method, payload = {}) {
-            if (!window.pywebview || !window.pywebview.api) {
-                throw new Error('pywebview API 不可用');
+        const API_METHOD_ALIASES = {
+            wc3_get_initial_state: ['get_initial_state'],
+            wc3_get_spell_tree: ['get_spell_tree'],
+            wc3_get_color_configs: ['get_color_configs'],
+            wc3_get_settings: ['get_settings']
+        };
+
+        function resolveApiMethodName(method) {
+            const api = window.pywebview?.api;
+            if (!api) return null;
+            if (typeof api[method] === 'function') return method;
+            const aliases = API_METHOD_ALIASES[method] || [];
+            for (const alias of aliases) {
+                if (typeof api[alias] === 'function') {
+                    return alias;
+                }
             }
-            const apiMethod = window.pywebview.api[method];
-            if (typeof apiMethod !== 'function') {
-                throw new Error(`API 方法不存在: ${method}`);
-            }
-            return apiMethod(payload);
+            return null;
         }
 
-        // ============================================================================
-        // 工具函数
-        // ============================================================================
+        async function waitForApiMethod(method, timeoutMs = 4000) {
+            const start = Date.now();
+            while (Date.now() - start < timeoutMs) {
+                if (resolveApiMethodName(method)) {
+                    return true;
+                }
+                await new Promise(r => setTimeout(r, 50));
+            }
+            return false;
+        }
+
+        async function callApi(method, payload = {}) {
+            if (!window.pywebview || !window.pywebview.api) {
+                throw new Error('pywebview API unavailable');
+            }
+            let resolvedMethod = resolveApiMethodName(method);
+            if (!resolvedMethod) {
+                const ready = await waitForApiMethod(method, 4000);
+                resolvedMethod = resolveApiMethodName(method);
+                if (!ready || !resolvedMethod) {
+                    throw new Error(`API method not found: ${method}`);
+                }
+            }
+            return window.pywebview.api[resolvedMethod](payload);
+        }
+
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
