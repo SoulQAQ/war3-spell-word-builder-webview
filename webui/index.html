@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WC3技能文本生成器</title>
+    <style>
+        /* CSS变量定义 */
+        :root {
+            --primary-color: #4a90d9;
+            --primary-hover: #357abd;
+            --danger-color: #e74c3c;
+            --danger-hover: #c0392b;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --border-color: #dcdfe6;
+            --text-primary: #303133;
+            --text-secondary: #606266;
+            --text-placeholder: #c0c4cc;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --radius: 4px;
+            --transition: all 0.2s ease;
+            --sidebar-width: 200px;
+        }
+
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-size: 13px;
+            color: var(--text-primary);
+            background: var(--bg-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 主布局 */
+        .app-layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧边栏 - 资源树 */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .sidebar-footer {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* 树形结构 */
+        .tree-item {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tree-row {
+            display: flex;
+            align-items: center;
+            padding: 5px 12px;
+            transition: var(--transition);
+        }
+
+        .tree-row:hover {
+            background: #f0f2f5;
+        }
+
+        .tree-row.selected {
+            background: rgba(74, 144, 217, 0.1);
+            color: var(--primary-color);
+        }
+
+        .tree-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--text-placeholder);
+        }
+
+        .tree-expand {
+            width: 16px;
+            height: 16px;
+            margin-right: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .tree-expand:hover {
+            color: var(--text-primary);
+        }
+
+        .tree-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 13px;
+        }
+
+        .tree-children {
+            padding-left: 16px;
+        }
+
+        .tree-children.collapsed {
+            display: none;
+        }
+
+        /* 右侧主区域 */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Tab栏 */
+        .tab-bar {
+            display: flex;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 16px;
+        }
+
+        .tab-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .tab-item:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-item.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        /* Tab内容 */
+        .tab-content {
+            flex: 1;
+            overflow: hidden;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* 编辑Tab布局 */
+        .edit-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .edit-left {
+            width: 280px;
+            min-width: 280px;
+            padding: 16px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        .edit-right {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        /* 技能预览框 */
+        .spell-preview {
+            background: rgba(0, 0, 0, 0.75);
+            border-radius: 6px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.6;
+            min-height: 120px;
+            overflow-y: auto;
+        }
+
+        .spell-preview p {
+            margin-bottom: 4px;
+        }
+
+        .spell-preview hr {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 6px 0;
+        }
+
+        /* 表单样式 */
+        .form-section {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-title {
+            font-weight: 500;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .form-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            height: 32px;
+            padding: 0 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 13px;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+        }
+
+        .form-textarea {
+            width: 100%;
+            min-height: 60px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-family: inherit;
+            resize: vertical;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .form-textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+        }
+
+        /* 按钮样式 */
+        .btn {
+            height: 32px;
+            padding: 0 16px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f0f2f5;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e4e7ed;
+        }
+
+        .btn-small {
+            height: 26px;
+            padding: 0 10px;
+            font-size: 12px;
+        }
+
+        /* 单选按钮组 */
+        .radio-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .radio-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 12px;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .radio-btn:hover {
+            border-color: var(--primary-color);
+        }
+
+        .radio-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        /* 属性列表 */
+        .property-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .property-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .property-item .form-input {
+            flex: 1;
+        }
+
+        .property-remove {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-placeholder);
+            cursor: pointer;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .property-remove:hover {
+            background: #fee;
+            color: var(--danger-color);
+        }
+
+        /* 颜色配置 */
+        .color-config-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .color-config-item label {
+            width: 100px;
+            font-size: 13px;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2px;
+            cursor: pointer;
+        }
+
+        .color-value {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        /* 底部操作栏 */
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .bottom-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bottom-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* 生成结果 */
+        .generate-result {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .generate-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #f5f7fa;
+            border-radius: var(--radius);
+        }
+
+        .generate-item .label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            width: 80px;
+        }
+
+        .generate-item .content {
+            flex: 1;
+            font-size: 12px;
+            font-family: monospace;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: var(--text-primary);
+            color: white;
+            border-radius: var(--radius);
+            font-size: 13px;
+            z-index: 1001;
+            transform: translateX(120%);
+            transition: var(--transition);
+        }
+
+        .toast.active {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            background: var(--danger-color);
+        }
+
+        .toast.success {
+            background: var(--success-color);
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c0c4cc;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-placeholder);
+            font-size: 13px;
+            gap: 8px;
+        }
+
+        /* 输入组 */
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- 左侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span>技能列表</span>
+                <button class="btn btn-small btn-secondary" onclick="showNewCategoryModal()">+ 分类</button>
+            </div>
+            <div class="sidebar-content" id="treeContainer">
+                <!-- 树形结构动态渲染 -->
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-small btn-secondary" style="width: 100%;" onclick="importSpells()">导入</button>
+            </div>
+        </aside>
+
+        <!-- 右侧主区域 -->
+        <main class="main-area">
+            <!-- Tab栏 -->
+            <div class="tab-bar">
+                <div class="tab-item active" data-tab="edit" onclick="switchTab('edit')">编辑文本</div>
+                <div class="tab-item" data-tab="color" onclick="switchTab('color')">色彩</div>
+            </div>
+
+            <!-- 编辑Tab -->
+            <div class="tab-content active" id="tabEdit">
+                <div class="edit-layout">
+                    <!-- 左侧：预览与操作 -->
+                    <div class="edit-left">
+                        <div class="form-item">
+                            <label class="form-label">显示模式</label>
+                            <div class="radio-group">
+                                <button class="radio-btn active" data-mode="learn" onclick="setMode('learn')">学习</button>
+                                <button class="radio-btn" data-mode="normal" onclick="setMode('normal')">普通</button>
+                            </div>
+                        </div>
+                        <div class="form-item">
+                            <label class="form-label">等级选择</label>
+                            <div class="radio-group" id="levelSelector">
+                                <!-- 动态生成 -->
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-success" style="flex: 1;" onclick="showGenerateModal()">生成</button>
+                            <button class="btn btn-secondary" style="flex: 1;" onclick="resetSpellData()">恢复默认</button>
+                        </div>
+                        <div class="form-item" style="flex: 1;">
+                            <label class="form-label">技能预览</label>
+                            <div class="spell-preview" id="spellPreview">
+                                <!-- 动态渲染 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：编辑表单 -->
+                    <div class="edit-right">
+                        <div class="form-section">
+                            <div class="form-title">基本信息</div>
+                            <div class="form-row">
+                                <div class="form-item">
+                                    <label class="form-label">技能ID</label>
+                                    <input type="text" class="form-input" id="spellId" placeholder="A000" oninput="onSpellDataChange()">
+                                </div>
+                                <div class="form-item">
+                                    <label class="form-label">名称</label>
+                                    <input type="text" class="form-input" id="spellName" placeholder="技能名称" oninput="onSpellDataChange()">
+                                </div>
+                                <div class="form-item" style="flex: 0 0 80px;">
+                                    <label class="form-label">热键</label>
+                                    <input type="text" class="form-input" id="spellHotKey" placeholder="Q" oninput="onSpellDataChange()">
+                                </div>
+                            </div>
+                            <div class="form-item">
+                                <label class="form-label">技能描述</label>
+                                <textarea class="form-textarea" id="spellEffect" placeholder="例：向目标投掷一巨大的魔法锤，对其造成一定伤害并使其陷入眩晕。" oninput="onSpellDataChange()"></textarea>
+                            </div>
+                            <div class="form-item">
+                                <label class="form-label">特点（可选）</label>
+                                <input type="text" class="form-input" id="spellNature" placeholder="例：需要持续施法" oninput="onSpellDataChange()">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-title">
+                                升级描述
+                                <span style="font-weight: normal; color: var(--text-placeholder); font-size: 11px; margin-left: 8px;">
+                                    用{a}{b}标记数值位置
+                                </span>
+                            </div>
+                            <div class="form-item">
+                                <label class="form-label">描述文本</label>
+                                <input type="text" class="form-input" id="updateWordText" placeholder="例：{d}点伤害，{t}秒晕眩时间" oninput="onSpellDataChange()">
+                            </div>
+                            <div class="form-item">
+                                <label class="form-label">数值参数</label>
+                                <textarea class="form-textarea" id="updateWordVals" placeholder="例：[lv=3][d=100+110][t=3+1]" oninput="onSpellDataChange()" style="min-height: 40px;"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-title">
+                                普通描述
+                                <span style="font-weight: normal; color: var(--text-placeholder); font-size: 11px; margin-left: 8px;">
+                                    显示在技能tooltip中
+                                </span>
+                            </div>
+                            <div class="form-item">
+                                <label class="form-label">描述文本</label>
+                                <textarea class="form-textarea" id="normalWordText" placeholder="例：向目标投掷一巨大的魔法锤，对其造成{d}点伤害并使其{t}秒内处于眩晕状态。" oninput="onSpellDataChange()"></textarea>
+                            </div>
+                            <div class="form-item">
+                                <label class="form-label">数值参数</label>
+                                <textarea class="form-textarea" id="normalWordVals" placeholder="例：[lv=3][d=100+110][t=3+1]" oninput="onSpellDataChange()" style="min-height: 40px;"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-title">技能属性</div>
+                            <div class="property-list" id="propertyList">
+                                <!-- 动态生成 -->
+                            </div>
+                            <button class="btn btn-small btn-secondary" style="margin-top: 8px;" onclick="addProperty()">+ 添加属性</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 底部操作栏 -->
+                <div class="bottom-bar">
+                    <div class="bottom-left">
+                        <span id="currentPath" style="color: var(--text-placeholder);">未保存</span>
+                    </div>
+                    <div class="bottom-right">
+                        <button class="btn btn-secondary" onclick="saveSpellAs()">另存为</button>
+                        <button class="btn btn-primary" onclick="saveSpell()">保存</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 色彩Tab -->
+            <div class="tab-content" id="tabColor" style="flex-direction: column;">
+                <div style="flex: 1; padding: 16px; overflow-y: auto;">
+                    <div class="form-section">
+                        <div class="form-title">颜色配置</div>
+                        <div class="color-config-item">
+                            <label>热键颜色</label>
+                            <input type="color" class="color-picker" id="colorHotKey" onchange="onColorChange()">
+                            <span class="color-value" id="colorHotKeyValue"></span>
+                        </div>
+                        <div class="color-config-item">
+                            <label>学习等级颜色</label>
+                            <input type="color" class="color-picker" id="colorLearnLevel" onchange="onColorChange()">
+                            <span class="color-value" id="colorLearnLevelValue"></span>
+                        </div>
+                        <div class="color-config-item">
+                            <label>属性名称颜色</label>
+                            <input type="color" class="color-picker" id="colorProperty" onchange="onColorChange()">
+                            <span class="color-value" id="colorPropertyValue"></span>
+                        </div>
+                        <div class="color-config-item">
+                            <label>升级等级颜色</label>
+                            <input type="color" class="color-picker" id="colorLearnUpdateLevel" onchange="onColorChange()">
+                            <span class="color-value" id="colorLearnUpdateLevelValue"></span>
+                        </div>
+                        <div class="color-config-item">
+                            <label>特殊描述颜色</label>
+                            <input type="color" class="color-picker" id="colorNature" onchange="onColorChange()">
+                            <span class="color-value" id="colorNatureValue"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-title">示例预览</div>
+                        <div class="spell-preview" id="colorExamplePreview" style="min-height: 150px;">
+                            <!-- 动态渲染 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="bottom-bar">
+                    <div class="bottom-left">
+                        <select class="form-input" id="colorConfigSelect" style="width: 150px;" onchange="loadSelectedColorConfig()">
+                            <!-- 动态生成 -->
+                        </select>
+                    </div>
+                    <div class="bottom-right">
+                        <button class="btn btn-danger" onclick="deleteColorConfig()">删除方案</button>
+                        <button class="btn btn-secondary" onclick="resetColorConfig()">恢复默认</button>
+                        <button class="btn btn-primary" onclick="saveColorConfig()">保存方案</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 新建分类弹窗 -->
+    <div class="modal-overlay" id="newCategoryModal">
+        <div class="modal" style="max-width: 350px;">
+            <div class="modal-header">新建分类</div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">分类路径（如：英雄/圣骑士）</label>
+                    <input type="text" class="form-input" id="newCategoryPath" placeholder="英雄/圣骑士">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('newCategoryModal')">取消</button>
+                <button class="btn btn-primary" onclick="createCategory()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 生成结果弹窗 -->
+    <div class="modal-overlay" id="generateModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">生成结果 - 点击复制</div>
+            <div class="modal-body">
+                <div class="generate-result" id="generateResult">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal('generateModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 另存为弹窗 -->
+    <div class="modal-overlay" id="saveAsModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">另存为</div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">分类路径</label>
+                    <input type="text" class="form-input" id="saveAsPath" placeholder="留空则保存到根目录">
+                </div>
+                <div class="form-item" style="margin-top: 12px;">
+                    <label class="form-label">技能名称</label>
+                    <input type="text" class="form-input" id="saveAsName" placeholder="技能名称">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('saveAsModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmSaveAs()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 保存颜色方案弹窗 -->
+    <div class="modal-overlay" id="saveColorModal">
+        <div class="modal" style="max-width: 300px;">
+            <div class="modal-header">保存颜色方案</div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">方案名称</label>
+                    <input type="text" class="form-input" id="colorConfigName" placeholder="我的方案">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('saveColorModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmSaveColorConfig()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================================================
+        // 状态管理
+        // ============================================================================
+        const state = {
+            tree: [],
+            currentSpell: null,
+            currentPath: '',
+            colorConfig: {},
+            colorConfigs: [],
+            currentColorName: 'default',
+            mode: 'learn',
+            level: 1,
+            maxLevel: 1,
+            settings: {}
+        };
+
+        const defaultSpellData = {
+            id: 'A000',
+            lv: 1,
+            name: '',
+            hotKey: '',
+            effect: '',
+            nature: '',
+            pros: [{name: '法力消耗', val: ''}],
+            updateWord: {text: '', vals: []},
+            normalWord: {text: '', vals: []}
+        };
+
+        const defaultColorConfig = {
+            learnLevel: '#33ccff',
+            property: '#33cc33',
+            hotKey: '#ffcc00',
+            learnUpdateLevel: '#ff9900',
+            nature: '#ffcccc'
+        };
+
+        // ============================================================================
+        // API调用
+        // ============================================================================
+        async function callApi(method, payload = {}) {
+            if (!window.pywebview || !window.pywebview.api) {
+                throw new Error('pywebview API 不可用');
+            }
+            const apiMethod = window.pywebview.api[method];
+            if (typeof apiMethod !== 'function') {
+                throw new Error(`API 方法不存在: ${method}`);
+            }
+            return apiMethod(payload);
+        }
+
+        // ============================================================================
+        // 工具函数
+        // ============================================================================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast active ' + type;
+            setTimeout(() => toast.classList.remove('active'), 3000);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('已复制到剪贴板', 'success');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('已复制到剪贴板', 'success');
+            });
+        }
+
+        // WC3颜色代码生成
+        function dyeing(str, color) {
+            if (!color) return str;
+            return '|cff' + color.replace('#', '') + str + '|r';
+        }
+
+        // 字符串模板填充
+        String.prototype.format = function(obj) {
+            let str = this;
+            if (!obj || typeof obj !== 'object') return str;
+            for (const key in obj) {
+                const regex = new RegExp('\\{' + key + '\\}', 'g');
+                str = str.replace(regex, obj[key]);
+            }
+            return str;
+        };
+
+        // 数值解析函数
+        function conversion(str) {
+            if (!str || typeof str !== 'string') return [];
+
+            // 提取配置
+            const cfgMatch = str.match(/\{([^}]*)\}/);
+            let cfg = {fs: '+', ls: ',', es: '=', lv: 'lv'};
+            if (cfgMatch) {
+                const items = cfgMatch[1].split(', ');
+                items.forEach(item => {
+                    const [k, v] = item.split(':');
+                    if (k && v) cfg[k] = v;
+                });
+            }
+
+            // 提取[lv=x]
+            const lvMatch = str.match(new RegExp('\\[' + cfg.lv + cfg.es + '(\\d+)\\]'));
+            if (!lvMatch) return [];
+            const lv = parseInt(lvMatch[1]);
+
+            // 提取其他参数
+            const pairs = [];
+            const regex = /\[([a-z])=([^\]]+)\]/g;
+            let match;
+            while ((match = regex.exec(str)) !== null) {
+                const key = match[1];
+                if (key === cfg.lv) continue;
+                const val = match[2];
+                pairs.push({key, val});
+            }
+
+            // 生成结果
+            const result = [];
+            for (let i = 0; i < lv; i++) {
+                const obj = {};
+                pairs.forEach(({key, val}) => {
+                    if (val.indexOf(cfg.fs) !== -1) {
+                        // 公式
+                        const [base, plus] = val.split(cfg.fs).map(Number);
+                        obj[key] = base + plus * i;
+                    } else {
+                        // 列表
+                        const vals = val.split(cfg.ls).map(Number);
+                        obj[key] = vals[i] !== undefined ? vals[i] : 'null';
+                    }
+                });
+                result.push(obj);
+            }
+            return result;
+        }
+
+        // ============================================================================
+        // 树形结构渲染
+        // ============================================================================
+        function renderTree() {
+            const container = document.getElementById('treeContainer');
+            container.innerHTML = renderTreeItems(state.tree);
+        }
+
+        function renderTreeItems(items, depth = 0) {
+            if (!items || items.length === 0) return '';
+            return items.map(item => {
+                if (item.type === 'category') {
+                    const hasChildren = item.children && item.children.length > 0;
+                    const expandIcon = item.expanded ? '▼' : '▶';
+                    return `
+                        <div class="tree-item">
+                            <div class="tree-row" onclick="toggleCategory('${item.path}')" oncontextmenu="showTreeContextMenu(event, 'category', '${item.path}')">
+                                ${hasChildren ? `<span class="tree-expand">${expandIcon}</span>` : '<span class="tree-expand"></span>'}
+                                <span class="tree-icon">📁</span>
+                                <span class="tree-name">${item.name}</span>
+                            </div>
+                            <div class="tree-children ${item.expanded ? '' : 'collapsed'}">
+                                ${renderTreeItems(item.children, depth + 1)}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="tree-item">
+                            <div class="tree-row ${state.currentPath === item.path ? 'selected' : ''}"
+                                 onclick="selectSpell('${item.path}')"
+                                 oncontextmenu="showTreeContextMenu(event, 'spell', '${item.path}')">
+                                <span class="tree-expand"></span>
+                                <span class="tree-icon">📄</span>
+                                <span class="tree-name">${item.name}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function toggleCategory(path) {
+            function toggle(items) {
+                for (const item of items) {
+                    if (item.path === path && item.type === 'category') {
+                        item.expanded = !item.expanded;
+                        return true;
+                    }
+                    if (item.children && toggle(item.children)) return true;
+                }
+                return false;
+            }
+            toggle(state.tree);
+            renderTree();
+        }
+
+        async function selectSpell(path) {
+            try {
+                const result = await callApi('wc3_load_spell', {path});
+                if (result.success) {
+                    state.currentSpell = result.data;
+                    state.currentPath = path;
+                    loadSpellToForm(result.data);
+                    renderTree();
+                    document.getElementById('currentPath').textContent = path;
+                } else {
+                    showToast(result.message || '加载失败', 'error');
+                }
+            } catch (e) {
+                showToast('加载技能失败: ' + e.message, 'error');
+            }
+        }
+
+        function showTreeContextMenu(event, type, path) {
+            event.preventDefault();
+            // 简化处理：双击或右键可扩展更多功能
+        }
+
+        // ============================================================================
+        // 技能数据管理
+        // ============================================================================
+        function loadSpellToForm(data) {
+            document.getElementById('spellId').value = data.id || 'A000';
+            document.getElementById('spellName').value = data.name || '';
+            document.getElementById('spellHotKey').value = data.hotKey || '';
+            document.getElementById('spellEffect').value = data.effect || '';
+            document.getElementById('spellNature').value = data.nature || '';
+            document.getElementById('updateWordText').value = data.updateWord?.text || '';
+            document.getElementById('normalWordText').value = data.normalWord?.text || '';
+
+            // 属性列表
+            renderPropertyList(data.pros || []);
+
+            // 触发更新
+            onSpellDataChange();
+        }
+
+        function getSpellFromForm() {
+            const updateWordText = document.getElementById('updateWordText').value;
+            const updateWordVals = document.getElementById('updateWordVals').value;
+            const normalWordText = document.getElementById('normalWordText').value;
+            const normalWordVals = document.getElementById('normalWordVals').value;
+
+            return {
+                id: document.getElementById('spellId').value || 'A000',
+                lv: state.level,
+                name: document.getElementById('spellName').value,
+                hotKey: document.getElementById('spellHotKey').value,
+                effect: document.getElementById('spellEffect').value,
+                nature: document.getElementById('spellNature').value,
+                pros: getPropertyList(),
+                updateWord: {
+                    text: updateWordText,
+                    vals: conversion(updateWordVals)
+                },
+                normalWord: {
+                    text: normalWordText,
+                    vals: conversion(normalWordVals)
+                }
+            };
+        }
+
+        function onSpellDataChange() {
+            const spell = getSpellFromForm();
+            state.currentSpell = spell;
+
+            // 更新等级选择器
+            const maxLv = Math.max(spell.updateWord.vals.length, spell.normalWord.vals.length, 1);
+            state.maxLevel = maxLv;
+            renderLevelSelector(maxLv);
+
+            // 更新预览
+            renderSpellPreview();
+        }
+
+        function renderLevelSelector(maxLv) {
+            const container = document.getElementById('levelSelector');
+            const buttons = [];
+            for (let i = 1; i <= Math.min(maxLv, 10); i++) {
+                buttons.push(`<button class="radio-btn ${i === state.level ? 'active' : ''}" onclick="setLevel(${i})">${i}级</button>`);
+            }
+            container.innerHTML = buttons.join('');
+        }
+
+        function setLevel(lv) {
+            state.level = lv;
+            if (state.currentSpell) {
+                state.currentSpell.lv = lv;
+            }
+            renderLevelSelector(state.maxLevel);
+            renderSpellPreview();
+        }
+
+        function setMode(mode) {
+            state.mode = mode;
+            document.querySelectorAll('[data-mode]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            renderSpellPreview();
+        }
+
+        function resetSpellData() {
+            state.currentSpell = JSON.parse(JSON.stringify(defaultSpellData));
+            state.currentPath = '';
+            loadSpellToForm(state.currentSpell);
+            document.getElementById('currentPath').textContent = '未保存';
+        }
+
+        // ============================================================================
+        // 属性列表
+        // ============================================================================
+        function renderPropertyList(pros) {
+            const container = document.getElementById('propertyList');
+            container.innerHTML = pros.map((p, i) => `
+                <div class="property-item">
+                    <input type="text" class="form-input" value="${p.name || ''}" placeholder="属性名" onchange="updatePropertyName(${i}, this.value)">
+                    <input type="text" class="form-input" value="${p.val || ''}" placeholder="值" onchange="updatePropertyValue(${i}, this.value)">
+                    <button class="property-remove" onclick="removeProperty(${i})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function getPropertyList() {
+            const items = document.querySelectorAll('.property-item');
+            return Array.from(items).map(item => {
+                const inputs = item.querySelectorAll('input');
+                return {name: inputs[0].value, val: inputs[1].value};
+            });
+        }
+
+        function addProperty() {
+            const container = document.getElementById('propertyList');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'property-item';
+            div.innerHTML = `
+                <input type="text" class="form-input" placeholder="属性名" onchange="onSpellDataChange()">
+                <input type="text" class="form-input" placeholder="值" onchange="onSpellDataChange()">
+                <button class="property-remove" onclick="removeProperty(${index})">✕</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeProperty(index) {
+            const container = document.getElementById('propertyList');
+            if (container.children[index]) {
+                container.children[index].remove();
+                onSpellDataChange();
+            }
+        }
+
+        function updatePropertyName(index, value) {
+            onSpellDataChange();
+        }
+
+        function updatePropertyValue(index, value) {
+            onSpellDataChange();
+        }
+
+        // ============================================================================
+        // 技能预览渲染
+        // ============================================================================
+        function renderSpellPreview() {
+            const preview = document.getElementById('spellPreview');
+            const spell = state.currentSpell;
+            if (!spell) {
+                preview.innerHTML = '<p>请输入技能信息</p>';
+                return;
+            }
+
+            const colors = state.colorConfig;
+            const lv = state.level;
+            const mode = state.mode;
+
+            let html = '';
+            if (mode === 'learn') {
+                // 学习模式
+                html = `<p>学习 <span style="color:${colors.learnLevel}">${lv}级</span> ${spell.name || '技能名称'}`;
+                if (spell.hotKey) {
+                    html += ` (<span style="color:${colors.hotKey}">${spell.hotKey}</span>)`;
+                }
+                html += '</p><hr>';
+
+                html += `<p>${spell.effect || ''}`;
+                if (spell.nature) {
+                    html += `<br><br><span style="color:${colors.nature}">${spell.nature}</span>`;
+                }
+                html += '<br><br>';
+
+                // 属性
+                spell.pros?.forEach(p => {
+                    if (p.name && p.val) {
+                        html += `<span style="color:${colors.property}">${p.name}：</span>${p.val}<br>`;
+                    }
+                });
+
+                // 升级描述
+                if (spell.updateWord?.vals?.length > 0) {
+                    spell.updateWord.vals.forEach((v, i) => {
+                        let text = spell.updateWord.text.format(v);
+                        if (!text.endsWith('。')) text += '。';
+                        html += `<br><span style="color:${colors.learnUpdateLevel}">${i + 1}级</span> - ${text}`;
+                    });
+                }
+                html += '</p>';
+            } else {
+                // 普通模式
+                html = `<p>${spell.name || '技能名称'}`;
+                if (spell.hotKey) {
+                    html += ` (<span style="color:${colors.hotKey}">${spell.hotKey}</span>)`;
+                }
+                html += ` - [<span style="color:${colors.learnLevel}">${lv}级</span>]</p><hr>`;
+
+                let normalText = spell.normalWord?.text || '';
+                const normalVals = spell.normalWord?.vals || [];
+                if (normalText && normalVals[lv - 1]) {
+                    normalText = normalText.format(normalVals[lv - 1]);
+                }
+                if (!normalText.endsWith('。') && normalText) normalText += '。';
+                html += `<p>${normalText}`;
+
+                if (spell.nature) {
+                    html += `<br><br><span style="color:${colors.nature}">${spell.nature}</span>`;
+                }
+
+                // 属性（排除法力消耗）
+                const pros = spell.pros?.filter(p => p.name !== '法力消耗') || [];
+                if (pros.length > 0) {
+                    html += '<br><br>';
+                    pros.forEach(p => {
+                        if (p.name && p.val) {
+                            html += `<span style="color:${colors.property}">${p.name}：</span>${p.val}<br>`;
+                        }
+                    });
+                }
+                html += '</p>';
+            }
+
+            preview.innerHTML = html;
+        }
+
+        // ============================================================================
+        // 生成功能
+        // ============================================================================
+        function showGenerateModal() {
+            const spell = state.currentSpell;
+            if (!spell || !spell.name) {
+                showToast('请先填写技能信息', 'error');
+                return;
+            }
+
+            const colors = state.colorConfig;
+            const result = document.getElementById('generateResult');
+            let html = '';
+
+            // 学习标题
+            let learnTitle = `学习 ${dyeing('%d 级', colors.learnLevel)} ${spell.name}`;
+            if (spell.hotKey) {
+                learnTitle += `(${dyeing(spell.hotKey, colors.hotKey)})`;
+            }
+            html += createGenerateItem('学习标题', learnTitle);
+
+            // 学习扩展
+            let learnExport = spell.effect + '\n';
+            if (spell.nature) learnExport += spell.nature + '\n';
+            spell.pros?.forEach(p => {
+                if (p.name && p.val) {
+                    learnExport += `\n${dyeing(p.name, colors.property)}：${p.val}`;
+                }
+            });
+            if (spell.updateWord?.vals?.length > 0) {
+                learnExport += '\n';
+                spell.updateWord.vals.forEach((v, i) => {
+                    let text = spell.updateWord.text.format(v);
+                    if (!text.endsWith('。')) text += '。';
+                    learnExport += `\n${dyeing((i + 1) + '级', colors.learnUpdateLevel)} - ${text}`;
+                });
+            }
+            html += createGenerateItem('学习扩展', learnExport);
+
+            // 各等级
+            const maxLv = Math.max(spell.updateWord?.vals?.length || 1, spell.normalWord?.vals?.length || 1);
+            for (let lv = 1; lv <= maxLv; lv++) {
+                // 标题
+                let title = `${spell.name}`;
+                if (spell.hotKey) {
+                    title += `(${dyeing(spell.hotKey, colors.hotKey)})`;
+                }
+                title += ` - [${dyeing(lv + ' 级', colors.learnLevel)}]`;
+                html += createGenerateItem(`${lv}级标题`, title);
+
+                // 扩展
+                let normalText = spell.normalWord?.text || '';
+                const normalVals = spell.normalWord?.vals || [];
+                if (normalText && normalVals[lv - 1]) {
+                    normalText = normalText.format(normalVals[lv - 1]);
+                }
+                if (!normalText.endsWith('。') && normalText) normalText += '。';
+
+                let exportText = normalText;
+                if (spell.nature) exportText += '\n' + spell.nature;
+
+                const pros = spell.pros?.filter(p => p.name !== '法力消耗') || [];
+                if (pros.length > 0) {
+                    exportText += '\n';
+                    pros.forEach(p => {
+                        if (p.name && p.val) {
+                            exportText += `\n${dyeing(p.name, colors.property)}：${p.val}`;
+                        }
+                    });
+                }
+                html += createGenerateItem(`${lv}级扩展`, exportText);
+            }
+
+            result.innerHTML = html;
+            openModal('generateModal');
+        }
+
+        function createGenerateItem(label, content) {
+            return `
+                <div class="generate-item">
+                    <span class="label">${label}</span>
+                    <span class="content">${escapeHtml(content)}</span>
+                    <button class="btn btn-small btn-primary" onclick="copyToClipboard(\`${escapeBacktick(content)}\`)">复制</button>
+                </div>
+            `;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function escapeBacktick(str) {
+            return str.replace(/`/g, '\\`').replace(/\n/g, '\\n');
+        }
+
+        // ============================================================================
+        // 保存功能
+        // ============================================================================
+        async function saveSpell() {
+            const spell = getSpellFromForm();
+            if (!spell.name) {
+                showToast('请输入技能名称', 'error');
+                return;
+            }
+
+            try {
+                const path = state.currentPath;
+                const parts = path.split('/');
+                const categoryPath = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+                const filename = parts.length > 0 ? parts[parts.length - 1].replace('.json', '') : spell.name;
+
+                const result = await callApi('wc3_save_spell', {
+                    path: categoryPath,
+                    filename: filename || spell.name,
+                    data: spell
+                });
+
+                if (result.success) {
+                    showToast('保存成功', 'success');
+                    state.currentPath = result.data?.path || path;
+                    document.getElementById('currentPath').textContent = state.currentPath;
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '保存失败', 'error');
+                }
+            } catch (e) {
+                showToast('保存失败: ' + e.message, 'error');
+            }
+        }
+
+        function saveSpellAs() {
+            document.getElementById('saveAsPath').value = '';
+            document.getElementById('saveAsName').value = state.currentSpell?.name || '';
+            openModal('saveAsModal');
+        }
+
+        async function confirmSaveAs() {
+            const spell = getSpellFromForm();
+            const path = document.getElementById('saveAsPath').value;
+            const name = document.getElementById('saveAsName').value || spell.name;
+
+            if (!name) {
+                showToast('请输入技能名称', 'error');
+                return;
+            }
+
+            try {
+                const result = await callApi('wc3_save_spell', {
+                    path: path,
+                    filename: name,
+                    data: spell
+                });
+
+                if (result.success) {
+                    showToast('保存成功', 'success');
+                    state.currentPath = result.data?.path || path + '/' + name + '.json';
+                    document.getElementById('currentPath').textContent = state.currentPath;
+                    closeModal('saveAsModal');
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '保存失败', 'error');
+                }
+            } catch (e) {
+                showToast('保存失败: ' + e.message, 'error');
+            }
+        }
+
+        // ============================================================================
+        // 分类管理
+        // ============================================================================
+        function showNewCategoryModal() {
+            document.getElementById('newCategoryPath').value = '';
+            openModal('newCategoryModal');
+        }
+
+        async function createCategory() {
+            const path = document.getElementById('newCategoryPath').value;
+            if (!path) {
+                showToast('请输入分类路径', 'error');
+                return;
+            }
+
+            try {
+                const result = await callApi('wc3_create_category', {path});
+                if (result.success) {
+                    showToast('分类创建成功', 'success');
+                    closeModal('newCategoryModal');
+                    await refreshTree();
+                } else {
+                    showToast(result.message || '创建失败', 'error');
+                }
+            } catch (e) {
+                showToast('创建失败: ' + e.message, 'error');
+            }
+        }
+
+        async function importSpells() {
+            try {
+                const result = await callApi('wc3_import_file', {});
+                if (result.success) {
+                    showToast(result.message || '导入成功', 'success');
+                    await refreshTree();
+                }
+            } catch (e) {
+                showToast('导入失败: ' + e.message, 'error');
+            }
+        }
+
+        async function refreshTree() {
+            try {
+                const result = await callApi('wc3_get_spell_tree');
+                if (result.success) {
+                    state.tree = result.data.tree;
+                    renderTree();
+                }
+            } catch (e) {
+                console.error('刷新树失败:', e);
+            }
+        }
+
+        // ============================================================================
+        // 颜色配置
+        // ============================================================================
+        function loadColorConfigToForm(config) {
+            document.getElementById('colorHotKey').value = config.hotKey || '#ffcc00';
+            document.getElementById('colorLearnLevel').value = config.learnLevel || '#33ccff';
+            document.getElementById('colorProperty').value = config.property || '#33cc33';
+            document.getElementById('colorLearnUpdateLevel').value = config.learnUpdateLevel || '#ff9900';
+            document.getElementById('colorNature').value = config.nature || '#ffcccc';
+            updateColorValues();
+            renderColorExamplePreview();
+        }
+
+        function getColorConfigFromForm() {
+            return {
+                hotKey: document.getElementById('colorHotKey').value,
+                learnLevel: document.getElementById('colorLearnLevel').value,
+                property: document.getElementById('colorProperty').value,
+                learnUpdateLevel: document.getElementById('colorLearnUpdateLevel').value,
+                nature: document.getElementById('colorNature').value
+            };
+        }
+
+        function updateColorValues() {
+            document.getElementById('colorHotKeyValue').textContent = document.getElementById('colorHotKey').value;
+            document.getElementById('colorLearnLevelValue').textContent = document.getElementById('colorLearnLevel').value;
+            document.getElementById('colorPropertyValue').textContent = document.getElementById('colorProperty').value;
+            document.getElementById('colorLearnUpdateLevelValue').textContent = document.getElementById('colorLearnUpdateLevel').value;
+            document.getElementById('colorNatureValue').textContent = document.getElementById('colorNature').value;
+        }
+
+        function onColorChange() {
+            updateColorValues();
+            state.colorConfig = getColorConfigFromForm();
+            renderSpellPreview();
+            renderColorExamplePreview();
+        }
+
+        function renderColorConfigSelect() {
+            const select = document.getElementById('colorConfigSelect');
+            select.innerHTML = state.colorConfigs.map(c =>
+                `<option value="${c.name}" ${c.name === state.currentColorName ? 'selected' : ''}>${c.name}</option>`
+            ).join('');
+        }
+
+        async function loadSelectedColorConfig() {
+            const name = document.getElementById('colorConfigSelect').value;
+            for (const c of state.colorConfigs) {
+                if (c.name === name) {
+                    state.colorConfig = c.config;
+                    state.currentColorName = name;
+                    loadColorConfigToForm(c.config);
+                    break;
+                }
+            }
+        }
+
+        function resetColorConfig() {
+            state.colorConfig = {...defaultColorConfig};
+            loadColorConfigToForm(defaultColorConfig);
+        }
+
+        function saveColorConfig() {
+            document.getElementById('colorConfigName').value = state.currentColorName || '我的方案';
+            openModal('saveColorModal');
+        }
+
+        async function confirmSaveColorConfig() {
+            const name = document.getElementById('colorConfigName').value;
+            if (!name) {
+                showToast('请输入方案名称', 'error');
+                return;
+            }
+
+            const config = getColorConfigFromForm();
+            try {
+                const result = await callApi('wc3_save_color_config', {name, config});
+                if (result.success) {
+                    showToast('保存成功', 'success');
+                    state.currentColorName = name;
+                    closeModal('saveColorModal');
+                    await loadColorConfigs();
+                } else {
+                    showToast(result.message || '保存失败', 'error');
+                }
+            } catch (e) {
+                showToast('保存失败: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteColorConfig() {
+            if (state.currentColorName === 'default') {
+                showToast('不能删除默认配置', 'error');
+                return;
+            }
+
+            try {
+                const result = await callApi('wc3_delete_color_config', {name: state.currentColorName});
+                if (result.success) {
+                    showToast('删除成功', 'success');
+                    state.currentColorName = 'default';
+                    await loadColorConfigs();
+                } else {
+                    showToast(result.message || '删除失败', 'error');
+                }
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        async function loadColorConfigs() {
+            try {
+                const result = await callApi('wc3_get_color_configs');
+                if (result.success) {
+                    state.colorConfigs = result.data.configs;
+                    renderColorConfigSelect();
+                }
+            } catch (e) {
+                console.error('加载颜色配置失败:', e);
+            }
+        }
+
+        function renderColorExamplePreview() {
+            const preview = document.getElementById('colorExamplePreview');
+            const colors = state.colorConfig;
+
+            preview.innerHTML = `
+                <p>学习 <span style="color:${colors.learnLevel}">1级</span> 风暴之锤 (<span style="color:${colors.hotKey}">T</span>)</p>
+                <hr>
+                <p>向目标投掷一巨大的魔法锤，对其造成一定伤害并使其陷入眩晕。
+                <br><br>
+                <span style="color:${colors.property}">法力消耗：</span>75
+                <br>
+                <span style="color:${colors.property}">施法距离：</span>800
+                <br><br>
+                <span style="color:${colors.learnUpdateLevel}">1级</span> - 100点伤害，3秒晕眩时间。
+                <br>
+                <span style="color:${colors.learnUpdateLevel}">2级</span> - 210点伤害，4秒晕眩时间。
+                </p>
+            `;
+        }
+
+        // ============================================================================
+        // Tab切换
+        // ============================================================================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.tab === tab);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            });
+        }
+
+        // ============================================================================
+        // 初始化
+        // ============================================================================
+        async function bootstrap() {
+            try {
+                // 等待API就绪
+                while (!window.pywebview?.api) {
+                    await new Promise(r => setTimeout(r, 50));
+                }
+
+                // 获取初始状态
+                const result = await callApi('wc3_get_initial_state');
+                if (result.success) {
+                    const data = result.data;
+                    state.tree = data.tree || [];
+                    state.colorConfigs = data.colorConfigs || [];
+                    state.colorConfig = data.currentColorConfig || {...defaultColorConfig};
+                    state.currentColorName = data.currentColorName || 'default';
+                    state.settings = data.settings || {};
+
+                    // 渲染UI
+                    renderTree();
+                    loadColorConfigToForm(state.colorConfig);
+                    renderColorConfigSelect();
+                    resetSpellData();
+                }
+            } catch (e) {
+                console.error('初始化失败:', e);
+                showToast('初始化失败: ' + e.message, 'error');
+            }
+        }
+
+        // 监听pywebview就绪
+        window.addEventListener('pywebviewready', bootstrap);
+        setTimeout(() => {
+            if (window.pywebview?.api) bootstrap();
+        }, 100);
+    </script>
+</body>
+</html>
