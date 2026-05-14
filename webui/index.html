@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WC3技能文本生成器</title>
+    <link rel="icon" href="../app.ico" type="image/x-icon">
     <!-- Inter Font from Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -367,7 +368,7 @@
             display: flex;
             flex-direction: column;
             gap: 14px;
-            overflow-y: auto;
+            overflow: hidden;
             overflow-x: hidden;
             justify-content: flex-start;
             align-items: stretch;
@@ -379,15 +380,65 @@
         }
 
         .edit-left .spell-preview {
-            min-height: 140px;
-            max-height: 340px;
+            min-height: 128px;
+            max-height: 260px;
+        }
+
+        .left-property-panel {
+            flex: 1 1 auto;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background:
+                linear-gradient(135deg, rgba(13, 148, 136, 0.08), rgba(20, 184, 166, 0.02)),
+                var(--card-bg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .left-property-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .left-property-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .left-property-hint {
+            font-size: 11px;
+            color: var(--text-placeholder);
+            margin-bottom: 8px;
+            line-height: 1.35;
+        }
+
+        .left-property-panel .property-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 4px;
         }
 
         .edit-right {
             flex: 1;
             padding: 14px 18px 78px 18px;
             overflow-y: auto;
+            overflow-x: hidden;
             background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         /* 技能预览框 */
@@ -645,7 +696,7 @@
         /* 单选按钮组 */
         .radio-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
@@ -683,30 +734,40 @@
         }
 
         .property-item {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 28px;
+            gap: 6px;
             align-items: center;
-            gap: 8px;
-            padding: 6px;
-            background: var(--bg-muted);
+            padding: 7px;
+            background: rgba(255, 255, 255, 0.72);
             border-radius: var(--radius);
             transition: var(--transition-fast);
-            border: 1px solid transparent;
+            border: 1px solid rgba(153, 246, 228, 0.7);
         }
 
         .property-item:hover {
-            background: var(--primary-light);
+            background: rgba(240, 253, 250, 0.96);
             border-color: var(--border-color);
         }
 
         .property-item .form-input {
-            flex: 1;
             background: var(--card-bg);
+            height: 30px;
         }
 
         .property-name-wrap {
             position: relative;
-            flex: 1;
             min-width: 0;
+        }
+
+        .property-value-input {
+            grid-column: 1;
+        }
+
+        .property-item .property-remove {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            align-self: center;
         }
 
         /* 下拉菜单使用fixed定位，避免被overflow容器裁剪 */
@@ -1409,6 +1470,16 @@
                                 <!-- 动态生成 -->
                             </div>
                         </div>
+
+                        <div class="left-property-panel">
+                            <div class="left-property-header">
+                                <div class="left-property-title">技能属性</div>
+                                <button class="btn btn-small btn-secondary" onclick="addProperty()">+ 添加</button>
+                            </div>
+                            <div class="property-list" id="propertyList">
+                                <!-- 动态生成 -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 右侧：编辑表单 -->
@@ -1479,14 +1550,6 @@
                                     </span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="form-title">技能属性</div>
-                            <div class="property-list" id="propertyList">
-                                <!-- 动态生成 -->
-                            </div>
-                            <button class="btn btn-small btn-secondary" style="margin-top: 8px;" onclick="addProperty()">+ 添加属性</button>
                         </div>
                     </div>
                 </div>
@@ -3096,7 +3159,7 @@
                         <input type="text" class="form-input property-name-input" value="${escapeAttr(p.name || '')}" placeholder="属性名" onfocus="showPropertySuggestions(${i})" oninput="onPropertyNameInput(this, ${i})">
                         <div class="property-suggest-list" id="propertySuggestList_${i}"></div>
                     </div>
-                    <input type="text" class="form-input" value="${p.val || ''}" placeholder="值" onchange="updatePropertyValue(${i}, this.value)">
+                    <input type="text" class="form-input property-value-input" value="${p.val || ''}" placeholder="值" onchange="updatePropertyValue(${i}, this.value)">
                     <button class="property-remove" onclick="removeProperty(${i})">✕</button>
                 </div>
             `).join('');
@@ -3120,11 +3183,12 @@
                     <input type="text" class="form-input property-name-input" placeholder="属性名" onfocus="showPropertySuggestions(${index})" oninput="onPropertyNameInput(this, ${index})">
                     <div class="property-suggest-list" id="propertySuggestList_${index}"></div>
                 </div>
-                <input type="text" class="form-input" placeholder="值" onchange="onSpellDataChange()">
+                <input type="text" class="form-input property-value-input" placeholder="值" onchange="onSpellDataChange()">
                 <button class="property-remove" onclick="removeProperty(${index})">✕</button>
             `;
             container.appendChild(div);
-            showPropertySuggestions(index);
+            div.scrollIntoView({block: 'nearest'});
+            div.querySelector('.property-name-input')?.focus();
         }
 
         function removeProperty(index) {

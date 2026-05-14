@@ -33,6 +33,7 @@ else:
 
 CONFIG_PATH = APP_DIR / 'config' / 'setting.yaml'
 WEBUI_INDEX = RESOURCE_DIR / 'webui' / 'index.html'
+APP_ICON = RESOURCE_DIR / 'app.ico'
 DEFAULT_SEVEN_ZIP_PATH = r'C:\Program Files\7-Zip\7z.exe'
 
 # WC3技能生成器数据目录
@@ -1806,6 +1807,26 @@ def ensure_config_exists():
         print(f"初始化配置文件失败: {e}")
 
 
+def apply_window_icon(window):
+    """
+    在开发模式下为 pywebview WinForms 窗口设置项目图标。
+
+    打包后的 exe 图标由 PyInstaller 的 --icon app.ico 负责；这里主要兜底
+    python.exe 启动时标题栏仍显示默认 Python 图标的问题。
+    """
+    if not APP_ICON.exists():
+        return
+
+    try:
+        from System.Drawing import Icon
+
+        native = getattr(window, 'native', None)
+        if native is not None and hasattr(native, 'Icon'):
+            native.Icon = Icon(str(APP_ICON))
+    except Exception as e:
+        print(f"设置窗口图标失败: {e}")
+
+
 def main():
     """
     主函数入口
@@ -1846,10 +1867,14 @@ def main():
             except Exception as e:
                 print(f'绑定拖拽事件失败: {e}')
 
+    def on_shown():
+        apply_window_icon(window)
+
     window.events.loaded += on_loaded
+    window.events.shown += on_shown
 
     # 启动webview（debug=False用于生产环境）
-    webview.start(debug=False)
+    webview.start(debug=False, icon=str(APP_ICON) if APP_ICON.exists() else None)
 
 
 if __name__ == '__main__':
