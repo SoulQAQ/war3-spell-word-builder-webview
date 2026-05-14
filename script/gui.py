@@ -1825,8 +1825,8 @@ def main():
         url=str(WEBUI_INDEX),
         js_api=api,
         width=1100,
-        height=750,
-        min_size=(900, 600),
+        height=1100,
+        min_size=(900, 1100),
         text_select=True,
     )
 

@@ -130,43 +130,35 @@ full_path = SPELLS_DIR / rel_path
 }
 ```
 
-### 3.3 Value Formula Parsing
+### 3.3 Value Parameter Evaluation
 
 ```javascript
-function conversion(str) {
-    // Extract level count: [lv=N]
-    const lvMatch = str.match(/\[lv=(\d+)\]/);
-    if (!lvMatch) return [];
-    const lv = parseInt(lvMatch[1]);
-    
-    // Extract parameters: [key=value]
-    const pairs = [];
-    const regex = /\[([a-z])=([^\]]+)\]/g;
-    let match;
-    while ((match = regex.exec(str)) !== null) {
-        pairs.push({key: match[1], val: match[2]});
-    }
-    
-    // Generate values for each level
+function generateValuesFromRules(lv, rules) {
+    const total = Math.max(parseInt(lv) || 1, 1);
     const result = [];
-    for (let i = 0; i < lv; i++) {
+
+    for (let i = 0; i < total; i++) {
         const obj = {};
-        pairs.forEach(({key, val}) => {
-            if (val.includes('+')) {
-                // Formula: base + increment
-                const [base, plus] = val.split('+').map(Number);
-                obj[key] = base + plus * i;
-            } else {
-                // List: explicit values
-                const vals = val.split(',').map(Number);
-                obj[key] = vals[i];
+        rules.forEach(rule => {
+            if (rule.type === 'linear') {
+                obj[rule.key] = Number(rule.base) + Number(rule.step) * i;
+            }
+            if (rule.type === 'fixed') {
+                obj[rule.key] = rule.value;
+            }
+            if (rule.type === 'list') {
+                const vals = rule.values.split(',');
+                obj[rule.key] = vals[i] ?? vals[vals.length - 1];
             }
         });
         result.push(obj);
     }
+
     return result;
 }
 ```
+
+Legacy `[lv=3][a=100+10]` strings are parsed for migration, but level count is controlled by the editor's Skill Level input.
 
 ### 3.4 WC3 Color Code Generation
 

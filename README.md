@@ -8,7 +8,7 @@ A desktop application for generating Warcraft 3 skill description text with cust
 
 - **Skill Editor**: Edit skill attributes (name, hotkey, effect, properties)
 - **Real-time Preview**: WC3 tooltip-style preview with custom colors
-- **Formula Parsing**: Support `[lv=3][a=100+10]` syntax for level-based values
+- **Value Parameters**: Edit value parameters with a table, `a=100+10` scaling formulas, or `a=100,120,150` explicit level values
 - **Color Configuration**: Customize 5 color elements with save/load presets
 - **Text Generation**: One-click copy with WC3 color codes (`|cffXXXXXX`)
 - **Category Management**: Tree-style resource manager with 2-3 level nesting
@@ -118,20 +118,21 @@ Color presets are saved in `/data/colors/` as JSON files.
 
 1. **Create Category**: Click "+ Category" in the sidebar to create skill folders
 2. **Edit Skill**: Fill in skill attributes in the right panel
-3. **Parse Values**: Use `[lv=N][a=base+increment]` syntax for level-scaling values
+3. **Value Parameters**: Add `{a}` to descriptions, then define its base value, per-level increment, or explicit level values in the parameter table
 4. **Preview**: Real-time WC3 tooltip preview in the left panel
 5. **Generate**: Click "Generate" to copy text with WC3 color codes
 6. **Save**: Save skills to the selected category
 
-## Value Formula Syntax
+## Value Parameters
 
 ```
-[lv=3][a=100+10][b=3,4,5]
+a=100+10;b=3,4,5
 ```
 
-- `lv=N`: Number of levels
+- The number of levels comes from the editor's "Skill Level" input
 - `a=base+increment`: Formula (each level adds increment)
 - `b=val1,val2,val3`: Explicit values per level
+- Legacy `[lv=3][a=100+10]` data can still be read, but `lv` is only kept for compatibility and no longer controls level count
 
 Reference: `{a}` in description text maps to the `a` parameter.
 

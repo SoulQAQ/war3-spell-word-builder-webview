@@ -359,14 +359,14 @@
         }
 
         .edit-left {
-            width: 300px;
-            min-width: 300px;
-            padding: 20px;
+            width: 280px;
+            min-width: 280px;
+            padding: 14px;
             background: var(--card-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 14px;
             overflow-y: auto;
             overflow-x: hidden;
             justify-content: flex-start;
@@ -385,7 +385,7 @@
 
         .edit-right {
             flex: 1;
-            padding: 20px 24px 90px 24px;
+            padding: 14px 18px 78px 18px;
             overflow-y: auto;
             background: var(--bg-color);
         }
@@ -424,8 +424,8 @@
             background: var(--card-bg);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 14px;
+            margin-bottom: 12px;
             border: 1px solid var(--border-light);
             transition: var(--transition);
         }
@@ -436,8 +436,8 @@
 
         .form-title {
             font-weight: 600;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 1px solid var(--border-color);
             font-size: 14px;
             color: var(--text-primary);
@@ -445,23 +445,28 @@
 
         .form-row {
             display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
+            gap: 10px;
+            margin-bottom: 10px;
             min-width: 0;
         }
 
         .basic-info-row {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(120px, 0.6fr) minmax(120px, 0.7fr);
-            gap: 16px;
+            gap: 10px;
             align-items: start;
+        }
+
+        .description-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.8fr);
         }
 
         .form-item {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             min-width: 0;
         }
 
@@ -475,8 +480,8 @@
             width: 100%;
             max-width: 100%;
             min-width: 0;
-            height: 36px;
-            padding: 0 12px;
+            height: 32px;
+            padding: 0 10px;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             font-size: 13px;
@@ -504,8 +509,8 @@
             width: 100%;
             max-width: 100%;
             min-width: 0;
-            min-height: 72px;
-            padding: 10px 12px;
+            min-height: 58px;
+            padding: 8px 10px;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             font-size: 13px;
@@ -520,6 +525,10 @@
         @media (max-width: 1200px) {
             .basic-info-row {
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            }
+
+            .description-row {
+                grid-template-columns: minmax(0, 1fr);
             }
         }
 
@@ -537,8 +546,8 @@
 
         /* 按钮样式 */
         .btn {
-            height: 36px;
-            padding: 0 20px;
+            height: 32px;
+            padding: 0 16px;
             border: none;
             border-radius: var(--radius);
             font-size: 13px;
@@ -628,8 +637,8 @@
         }
 
         .btn-small {
-            height: 28px;
-            padding: 0 12px;
+            height: 26px;
+            padding: 0 10px;
             font-size: 12px;
         }
 
@@ -641,7 +650,7 @@
         }
 
         .radio-btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             cursor: pointer;
@@ -670,14 +679,14 @@
         .property-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .property-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px;
+            gap: 8px;
+            padding: 6px;
             background: var(--bg-muted);
             border-radius: var(--radius);
             transition: var(--transition-fast);
@@ -774,6 +783,192 @@
             background: rgba(220, 38, 38, 0.1);
             color: var(--danger-color);
             transform: scale(1.1);
+        }
+
+        .value-param-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .param-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 10px;
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.08), rgba(20, 184, 166, 0.03));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+        }
+
+        .param-hint {
+            flex: 1;
+            min-width: 0;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            line-height: 1.4;
+        }
+
+        .param-chips,
+        .param-alerts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .param-chip,
+        .param-alert {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            line-height: 1.2;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-tertiary);
+        }
+
+        .param-chip {
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .param-chip:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+            color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .param-alert.warning {
+            border-color: rgba(234, 88, 12, 0.35);
+            background: rgba(234, 88, 12, 0.08);
+            color: var(--warning-color);
+        }
+
+        .param-alert.error {
+            border-color: rgba(220, 38, 38, 0.35);
+            background: rgba(220, 38, 38, 0.08);
+            color: var(--danger-color);
+        }
+
+        .param-table {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .param-row {
+            display: grid;
+            grid-template-columns: 56px minmax(90px, 1fr) 110px minmax(92px, 1fr) minmax(92px, 1fr) 44px;
+            gap: 8px;
+            align-items: center;
+            padding: 6px;
+            background: var(--bg-muted);
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            transition: var(--transition-fast);
+        }
+
+        .param-row:hover {
+            background: var(--primary-light);
+            border-color: var(--border-color);
+        }
+
+        .param-key {
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-weight: 700;
+            text-align: center;
+            color: var(--primary-color);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 6px 4px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .param-key:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .param-row .form-input,
+        .param-row .param-type-select {
+            height: 30px;
+            background: var(--card-bg);
+        }
+
+        .param-type-select {
+            width: 100%;
+            min-width: 0;
+            padding: 0 8px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 12px;
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .param-type-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-ring);
+        }
+
+        .param-preview {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            min-height: 20px;
+            padding-left: 2px;
+        }
+
+        .param-preview-pill {
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(13, 148, 136, 0.1);
+            color: var(--text-primary);
+            font-size: 11px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+        }
+
+        .param-empty {
+            padding: 10px 12px;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius);
+            color: var(--text-placeholder);
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.65);
+        }
+
+        .advanced-params {
+            display: none;
+        }
+
+        .advanced-params.active {
+            display: flex;
+        }
+
+        @media (max-width: 1080px) {
+            .param-row {
+                grid-template-columns: 52px minmax(0, 1fr) minmax(96px, 0.8fr) 34px;
+            }
+
+            .param-row .property-remove {
+                grid-column: 4;
+                grid-row: 1;
+            }
+
+            .param-row > .form-input:nth-of-type(2),
+            .param-row > .param-hint {
+                grid-column: 2 / span 2;
+            }
         }
 
         /* 颜色配置 */
@@ -1238,13 +1433,15 @@
                                     <input type="number" class="form-input" id="spellLevel" min="1" max="10" value="1" oninput="onSpellLevelChange()">
                                 </div>
                             </div>
-                            <div class="form-item">
-                                <label class="form-label">技能描述</label>
-                                <textarea class="form-textarea" id="spellEffect" placeholder="例：向目标投掷一巨大的魔法锤，对其造成一定伤害并使其陷入眩晕。" oninput="onSpellDataChange()"></textarea>
-                            </div>
-                            <div class="form-item">
-                                <label class="form-label">特点（可选）</label>
-                                <input type="text" class="form-input" id="spellNature" placeholder="例：需要持续施法" oninput="onSpellDataChange()">
+                            <div class="form-row description-row">
+                                <div class="form-item">
+                                    <label class="form-label">技能描述</label>
+                                    <textarea class="form-textarea" id="spellEffect" placeholder="例：向目标投掷一巨大的魔法锤，对其造成一定伤害并使其陷入眩晕。" oninput="onSpellDataChange()"></textarea>
+                                </div>
+                                <div class="form-item">
+                                    <label class="form-label">特点（可选）</label>
+                                    <textarea class="form-textarea" id="spellNature" placeholder="例：需要持续施法" oninput="onSpellDataChange()"></textarea>
+                                </div>
                             </div>
                         </div>
 
@@ -1255,20 +1452,32 @@
                                     用{a}{b}标记数值位置
                                 </span>
                             </div>
-                            <div class="form-item">
-                                <label class="form-label">普通描述文本</label>
-                                <textarea class="form-textarea" id="normalWordText" placeholder="例：向目标投掷一巨大的魔法锤，对其造成{d}点伤害并使其{t}秒内处于眩晕状态。" oninput="onSpellDataChange()"></textarea>
+                            <div class="form-row description-row">
+                                <div class="form-item">
+                                    <label class="form-label">普通描述文本</label>
+                                    <textarea class="form-textarea" id="normalWordText" placeholder="例：向目标投掷一巨大的魔法锤，对其造成{d}点伤害并使其{t}秒内处于眩晕状态。" onfocus="rememberDescriptionField(this)" oninput="onSpellDataChange()"></textarea>
+                                </div>
+                                <div class="form-item">
+                                    <label class="form-label">升级描述文本</label>
+                                    <textarea class="form-textarea" id="updateWordText" placeholder="例：{d}点伤害，{t}秒晕眩时间" onfocus="rememberDescriptionField(this)" oninput="onSpellDataChange()"></textarea>
+                                </div>
                             </div>
-                            <div class="form-item">
-                                <label class="form-label">升级描述文本</label>
-                                <input type="text" class="form-input" id="updateWordText" placeholder="例：{d}点伤害，{t}秒晕眩时间" oninput="onSpellDataChange()">
-                            </div>
-                            <div class="form-item">
-                                <label class="form-label">数值参数</label>
-                                <input type="text" class="form-input" id="valueParams" placeholder="例：d=100+110；t=3+1" oninput="onSpellDataChange()">
-                                <span style="font-size: 11px; color: var(--text-placeholder); margin-top: 4px; display: block;">
-                                    格式：参数=基础值+增量 或 参数=值1,值2,值3（兼容旧格式中的 lv=）
-                                </span>
+                            <div class="form-item value-param-panel">
+                                <div class="param-toolbar">
+                                    <div class="param-hint">自动识别描述里的 {a}、{b}。默认用参数表编辑，公式输入保留给快速粘贴旧数据。</div>
+                                    <button class="btn btn-small btn-secondary" type="button" onclick="addValueParamRule()">+ 参数</button>
+                                    <button class="btn btn-small btn-secondary" id="toggleAdvancedParamsBtn" type="button" onclick="toggleAdvancedParams()">高级输入</button>
+                                </div>
+                                <div class="param-chips" id="paramChips"></div>
+                                <div class="param-alerts" id="paramAlerts"></div>
+                                <div class="param-table" id="valueParamTable"></div>
+                                <div class="form-item advanced-params" id="advancedParamsPanel">
+                                    <label class="form-label">公式输入</label>
+                                    <input type="text" class="form-input" id="valueParams" placeholder="例：d=100+110；t=3+1" onchange="onValueParamsTextInput()">
+                                    <span style="font-size: 11px; color: var(--text-placeholder); margin-top: 2px; display: block;">
+                                        支持 参数=基础值+增量 或 参数=值1,值2,值3；旧版 [lv=3] 只用于读取兼容，不再控制技能等级。
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -1459,6 +1668,9 @@
             mode: 'learn',
             level: 1,
             maxLevel: 1,
+            valueParamRules: [],
+            advancedParamsOpen: false,
+            lastDescriptionField: 'normalWordText',
             settings: {}
         };
 
@@ -1471,7 +1683,9 @@
             nature: '',
             pros: [{name: '法力消耗', val: ''}],
             updateWord: {text: '', vals: []},
-            normalWord: {text: '', vals: []}
+            normalWord: {text: '', vals: []},
+            valueParams: '',
+            valueParamRules: []
         };
 
         const defaultColorConfig = {
@@ -1728,12 +1942,12 @@
             return str;
         };
 
-        // 数值参数解析（兼容旧格式 [lv=3][a=5+10] 与新格式 lv=3；a=5+10）
+        // 数值参数解析（兼容旧格式 [lv=3][a=5+10]；lv 仅用于历史读取，不再控制技能等级）
         function parseValueParams(str) {
-            if (!str || typeof str !== 'string') return {lv: 1, params: {}};
+            if (!str || typeof str !== 'string') return {legacyLv: null, params: {}};
 
             const raw = String(str).trim();
-            if (!raw) return {lv: 1, params: {}};
+            if (!raw) return {legacyLv: null, params: {}};
 
             if (raw.includes('[') && raw.includes(']')) {
                 return parseOldBracketFormat(raw);
@@ -1742,12 +1956,12 @@
         }
 
         function parseOldBracketFormat(str) {
-            let lv = 1;
+            let legacyLv = null;
             const params = {};
 
             const lvMatch = str.match(/\[lv\s*=\s*(\d+)\]/i);
             if (lvMatch) {
-                lv = Math.max(parseInt(lvMatch[1]) || 1, 1);
+                legacyLv = Math.max(parseInt(lvMatch[1]) || 1, 1);
             }
 
             const regex = /\[([a-zA-Z]+)\s*=\s*([^\]]+)\]/g;
@@ -1759,11 +1973,10 @@
                 params[key] = value;
             }
 
-            return {lv, params};
+            return {legacyLv, params};
         }
 
         function parseSemicolonFormat(str) {
-            let lv = 1;
             const params = {};
 
             const parts = str.split(/[;；]/);
@@ -1777,14 +1990,11 @@
                 const value = item.slice(eqIdx + 1).trim();
                 if (!key || !value) return;
 
-                if (key === 'lv') {
-                    lv = Math.max(parseInt(value) || 1, 1);
-                } else {
-                    params[key] = value;
-                }
+                if (key === 'lv') return;
+                params[key] = value;
             });
 
-            return {lv, params};
+            return {legacyLv: null, params};
         }
 
         function generateValues(lv, params) {
@@ -1824,6 +2034,240 @@
                 parts.push(`${key}=${val}`);
             });
             return parts.join('；');
+        }
+
+        function normalizeParamKey(key) {
+            return String(key || '').trim().replace(/[{}]/g, '').toLowerCase();
+        }
+
+        function extractPlaceholdersFromText(...texts) {
+            const result = [];
+            const seen = new Set();
+            texts.forEach(text => {
+                const raw = String(text || '');
+                const regex = /\{([a-zA-Z][a-zA-Z0-9_]*)\}/g;
+                let match;
+                while ((match = regex.exec(raw)) !== null) {
+                    const key = normalizeParamKey(match[1]);
+                    if (!key || seen.has(key)) continue;
+                    seen.add(key);
+                    result.push(key);
+                }
+            });
+            return result;
+        }
+
+        function cleanValueParamRule(rule) {
+            const key = normalizeParamKey(rule?.key);
+            if (!key) return null;
+            const type = ['fixed', 'linear', 'list'].includes(rule?.type) ? rule.type : 'linear';
+            return {
+                key,
+                label: String(rule?.label || ''),
+                type,
+                value: String(rule?.value ?? ''),
+                base: String(rule?.base ?? ''),
+                step: String(rule?.step ?? ''),
+                values: String(rule?.values ?? '')
+            };
+        }
+
+        function normalizeValueParamRules(rules) {
+            const src = Array.isArray(rules) ? rules : [];
+            const seen = new Set();
+            const result = [];
+            src.forEach(rule => {
+                const cleaned = cleanValueParamRule(rule);
+                if (!cleaned || seen.has(cleaned.key)) return;
+                seen.add(cleaned.key);
+                result.push(cleaned);
+            });
+            return result;
+        }
+
+        function inferRuleFromParamValue(key, value, existingRule = null) {
+            const raw = String(value || '').trim();
+            const rule = cleanValueParamRule(existingRule) || {
+                key,
+                label: '',
+                type: 'linear',
+                value: '',
+                base: '',
+                step: '',
+                values: ''
+            };
+            rule.key = normalizeParamKey(key);
+
+            if (raw.includes('+')) {
+                const plusIndex = raw.indexOf('+');
+                rule.type = 'linear';
+                rule.base = raw.slice(0, plusIndex).trim();
+                rule.step = raw.slice(plusIndex + 1).trim();
+                return rule;
+            }
+            if (raw.includes(',')) {
+                rule.type = 'list';
+                rule.values = raw;
+                return rule;
+            }
+            rule.type = 'fixed';
+            rule.value = raw;
+            return rule;
+        }
+
+        function valueParamRulesFromParams(params, existingRules = []) {
+            const existingMap = new Map(normalizeValueParamRules(existingRules).map(rule => [rule.key, rule]));
+            return Object.keys(params || {}).map(key => {
+                const normalizedKey = normalizeParamKey(key);
+                return inferRuleFromParamValue(normalizedKey, params[key], existingMap.get(normalizedKey));
+            }).filter(Boolean);
+        }
+
+        function getRuleFormulaValue(rule) {
+            const cleaned = cleanValueParamRule(rule);
+            if (!cleaned) return '';
+            if (cleaned.type === 'fixed') {
+                return cleaned.value.trim();
+            }
+            if (cleaned.type === 'list') {
+                return cleaned.values.trim();
+            }
+            const base = cleaned.base.trim();
+            const step = cleaned.step.trim();
+            if (!base && !step) return '';
+            if (base && step) return `${base}+${step}`;
+            return base || step;
+        }
+
+        function valueParamRulesToParams(rules) {
+            const params = {};
+            normalizeValueParamRules(rules).forEach(rule => {
+                const formula = getRuleFormulaValue(rule);
+                if (!formula) return;
+                params[rule.key] = formula;
+            });
+            return params;
+        }
+
+        function syncValueParamRulesWithPlaceholders(rules, placeholders) {
+            const normalizedRules = normalizeValueParamRules(rules);
+            const placeholderSet = new Set(placeholders || []);
+            const byKey = new Map(normalizedRules.map(rule => [rule.key, rule]));
+            const ordered = [];
+
+            (placeholders || []).forEach(key => {
+                if (byKey.has(key)) {
+                    ordered.push(byKey.get(key));
+                } else {
+                    ordered.push({key, label: '', type: 'linear', value: '', base: '', step: '', values: ''});
+                }
+            });
+
+            normalizedRules.forEach(rule => {
+                if (!placeholderSet.has(rule.key)) {
+                    ordered.push(rule);
+                }
+            });
+
+            return ordered;
+        }
+
+        function formatValueNumber(num) {
+            if (!Number.isFinite(num)) return '';
+            const rounded = Math.round(num * 1000000) / 1000000;
+            return Number.isInteger(rounded) ? rounded : parseFloat(rounded.toFixed(6));
+        }
+
+        function evaluateValueParamRule(rule, index) {
+            const cleaned = cleanValueParamRule(rule);
+            if (!cleaned) return '';
+
+            if (cleaned.type === 'fixed') {
+                return cleaned.value.trim();
+            }
+
+            if (cleaned.type === 'list') {
+                const vals = cleaned.values.split(',').map(v => String(v || '').trim()).filter(v => v !== '');
+                if (vals.length === 0) return '';
+                return vals[index] !== undefined ? vals[index] : vals[vals.length - 1];
+            }
+
+            const base = parseFloat(cleaned.base);
+            const step = parseFloat(cleaned.step);
+            if (Number.isNaN(base) || Number.isNaN(step)) return '';
+            return formatValueNumber(base + step * index);
+        }
+
+        function generateValuesFromRules(lv, rules) {
+            const total = Math.max(parseInt(lv) || 1, 1);
+            const normalizedRules = normalizeValueParamRules(rules);
+            const result = [];
+            for (let i = 0; i < total; i++) {
+                const obj = {};
+                normalizedRules.forEach(rule => {
+                    const value = evaluateValueParamRule(rule, i);
+                    if (value === '') return;
+                    obj[rule.key] = value;
+                });
+                result.push(obj);
+            }
+            return result;
+        }
+
+        function getValueParamPreview(rule, lv) {
+            const total = Math.min(Math.max(parseInt(lv) || 1, 1), 10);
+            const values = [];
+            for (let i = 0; i < total; i++) {
+                values.push(evaluateValueParamRule(rule, i));
+            }
+            return values;
+        }
+
+        function validateValueParamRules(rules, placeholders, lv) {
+            const normalizedRules = normalizeValueParamRules(rules);
+            const paramMap = new Map(normalizedRules.map(rule => [rule.key, rule]));
+            const placeholderSet = new Set(placeholders || []);
+            const alerts = [];
+
+            (placeholders || []).forEach(key => {
+                const rule = paramMap.get(key);
+                if (!rule || !getRuleFormulaValue(rule)) {
+                    alerts.push({type: 'error', text: `{${key}} 还没有数值`});
+                }
+            });
+
+            normalizedRules.forEach(rule => {
+                if (!placeholderSet.has(rule.key)) {
+                    alerts.push({type: 'warning', text: `{${rule.key}} 未在描述中使用`});
+                }
+                if (rule.type === 'linear' && (Number.isNaN(parseFloat(rule.base)) || Number.isNaN(parseFloat(rule.step)))) {
+                    alerts.push({type: 'error', text: `{${rule.key}} 的递增数值不完整`});
+                }
+                if (rule.type === 'list') {
+                    const vals = rule.values.split(',').map(v => String(v || '').trim()).filter(v => v !== '');
+                    if (vals.length === 0) {
+                        alerts.push({type: 'error', text: `{${rule.key}} 的逐级值为空`});
+                    } else if (vals.length < lv) {
+                        alerts.push({type: 'warning', text: `{${rule.key}} 少于 ${lv} 级，将沿用最后一个值`});
+                    }
+                }
+            });
+
+            return alerts;
+        }
+
+        function getNextParamKey() {
+            const used = new Set(normalizeValueParamRules(state.valueParamRules).map(rule => rule.key));
+            const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+            return letters.find(letter => !used.has(letter)) || `p${used.size + 1}`;
+        }
+
+        function ensureValueParamRulesForCurrentForm() {
+            const normalText = document.getElementById('normalWordText')?.value || '';
+            const updateText = document.getElementById('updateWordText')?.value || '';
+            const placeholders = extractPlaceholdersFromText(normalText, updateText);
+            state.valueParamRules = syncValueParamRulesWithPlaceholders(state.valueParamRules, placeholders);
+            return placeholders;
         }
 
         // ============================================================================
@@ -2316,6 +2760,9 @@
             if (!migrated.normalWord || typeof migrated.normalWord !== 'object') {
                 migrated.normalWord = {text: '', vals: []};
             }
+            if (!Array.isArray(migrated.valueParamRules)) {
+                migrated.valueParamRules = [];
+            }
 
             let valueParams = String(migrated.valueParams || '').trim();
             if (!valueParams) {
@@ -2331,6 +2778,15 @@
 
             const parsed = parseValueParams(valueParams);
             migrated.valueParams = paramsToSaveFormat(parsed.params);
+            const fromValueParams = valueParamRulesFromParams(parsed.params, migrated.valueParamRules);
+            migrated.valueParamRules = normalizeValueParamRules(migrated.valueParamRules);
+            if (fromValueParams.length > 0) {
+                const savedMap = new Map(migrated.valueParamRules.map(rule => [rule.key, rule]));
+                migrated.valueParamRules = fromValueParams.map(rule => ({
+                    ...rule,
+                    label: savedMap.get(rule.key)?.label || rule.label || ''
+                }));
+            }
             return migrated;
         }
 
@@ -2347,6 +2803,12 @@
             document.getElementById('updateWordText').value = data.updateWord?.text || '';
             document.getElementById('normalWordText').value = data.normalWord?.text || '';
             document.getElementById('valueParams').value = data.valueParams || '';
+            const parsed = parseValueParams(data.valueParams || '');
+            state.valueParamRules = normalizeValueParamRules(data.valueParamRules);
+            if (Object.keys(parsed.params).length > 0) {
+                state.valueParamRules = valueParamRulesFromParams(parsed.params, state.valueParamRules);
+            }
+            ensureValueParamRulesForCurrentForm();
 
             // 属性列表
             renderPropertyList(data.pros || []);
@@ -2358,10 +2820,15 @@
         function getSpellFromForm() {
             const updateWordText = document.getElementById('updateWordText').value;
             const normalWordText = document.getElementById('normalWordText').value;
-            const valueParamsStr = document.getElementById('valueParams').value;
-            const parsed = parseValueParams(valueParamsStr);
             const level = parseInt(document.getElementById('spellLevel').value) || 1;
-            const vals = generateValues(level, parsed.params);
+            const placeholders = ensureValueParamRulesForCurrentForm();
+            const params = valueParamRulesToParams(state.valueParamRules);
+            const valueParams = paramsToSaveFormat(params);
+            const valueParamsInput = document.getElementById('valueParams');
+            if (valueParamsInput && valueParamsInput.value !== valueParams) {
+                valueParamsInput.value = valueParams;
+            }
+            const vals = generateValuesFromRules(level, state.valueParamRules);
 
             return {
                 id: document.getElementById('spellId').value || 'A000',
@@ -2380,19 +2847,27 @@
                     text: normalWordText,
                     vals: vals
                 },
-                valueParams: paramsToSaveFormat(parsed.params)
+                valueParams,
+                valueParamRules: normalizeValueParamRules(state.valueParamRules),
+                valueParamPlaceholders: placeholders
             };
         }
 
-        function onSpellDataChange() {
+        function onSpellDataChange(options = {}) {
             const spell = getSpellFromForm();
             state.currentSpell = spell;
+            const shouldRenderParams = options.renderParams !== false;
 
             // 更新等级选择器
             const maxLv = Math.max(parseInt(spell.level ?? spell.lv ?? 1) || 1, 1);
             state.maxLevel = maxLv;
             if (state.level > maxLv) state.level = maxLv;
             renderLevelSelector(maxLv);
+            if (shouldRenderParams) {
+                renderValueParamEditor();
+            } else {
+                refreshValueParamFeedback();
+            }
 
             // 更新预览
             renderSpellPreview();
@@ -2436,8 +2911,178 @@
         function resetSpellData() {
             state.currentSpell = JSON.parse(JSON.stringify(defaultSpellData));
             state.currentPath = '';
+            state.valueParamRules = [];
+            state.advancedParamsOpen = false;
             loadSpellToForm(state.currentSpell);
             document.getElementById('currentPath').textContent = '未保存';
+        }
+
+        // ============================================================================
+        // 数值参数编辑器
+        // ============================================================================
+        function renderValueParamEditor() {
+            const chipsEl = document.getElementById('paramChips');
+            const alertsEl = document.getElementById('paramAlerts');
+            const tableEl = document.getElementById('valueParamTable');
+            const advancedPanel = document.getElementById('advancedParamsPanel');
+            const toggleBtn = document.getElementById('toggleAdvancedParamsBtn');
+            if (!chipsEl || !alertsEl || !tableEl) return;
+
+            const normalText = document.getElementById('normalWordText')?.value || '';
+            const updateText = document.getElementById('updateWordText')?.value || '';
+            const placeholders = extractPlaceholdersFromText(normalText, updateText);
+            const level = Math.max(parseInt(document.getElementById('spellLevel')?.value) || 1, 1);
+            state.valueParamRules = syncValueParamRulesWithPlaceholders(state.valueParamRules, placeholders);
+            const rules = normalizeValueParamRules(state.valueParamRules);
+
+            chipsEl.innerHTML = placeholders.length > 0
+                ? placeholders.map(key => `<button class="param-chip" type="button" onclick="insertParamPlaceholder('${escapeJsString(key)}')">{${key}}</button>`).join('')
+                : '<span class="param-alert">描述中还没有 {a} 这类数值标记</span>';
+
+            const alerts = validateValueParamRules(rules, placeholders, level);
+            alertsEl.innerHTML = alerts.map(alert => (
+                `<span class="param-alert ${alert.type}">${escapeHtml(alert.text)}</span>`
+            )).join('');
+
+            if (rules.length === 0) {
+                tableEl.innerHTML = '<div class="param-empty">在描述里输入 {a}，这里会自动出现参数行。也可以先手动添加一个参数。</div>';
+            } else {
+                tableEl.innerHTML = rules.map((rule, i) => renderValueParamRow(rule, i, level)).join('');
+            }
+
+            if (advancedPanel) {
+                advancedPanel.classList.toggle('active', state.advancedParamsOpen);
+            }
+            if (toggleBtn) {
+                toggleBtn.textContent = state.advancedParamsOpen ? '收起高级' : '高级输入';
+            }
+        }
+
+        function refreshValueParamFeedback() {
+            const alertsEl = document.getElementById('paramAlerts');
+            const tableEl = document.getElementById('valueParamTable');
+            if (!alertsEl) return;
+
+            const normalText = document.getElementById('normalWordText')?.value || '';
+            const updateText = document.getElementById('updateWordText')?.value || '';
+            const placeholders = extractPlaceholdersFromText(normalText, updateText);
+            const level = Math.max(parseInt(document.getElementById('spellLevel')?.value) || 1, 1);
+            const rules = normalizeValueParamRules(state.valueParamRules);
+
+            const alerts = validateValueParamRules(rules, placeholders, level);
+            alertsEl.innerHTML = alerts.map(alert => (
+                `<span class="param-alert ${alert.type}">${escapeHtml(alert.text)}</span>`
+            )).join('');
+
+            if (!tableEl) return;
+            rules.forEach((rule, index) => {
+                const row = tableEl.querySelector(`[data-param-index="${index}"] .param-preview`);
+                if (!row) return;
+                row.innerHTML = getValueParamPreview(rule, level).map((value, i) => (
+                    `<span class="param-preview-pill">${i + 1}级 ${escapeHtml(value || '-')}</span>`
+                )).join('');
+            });
+        }
+
+        function renderValueParamRow(rule, index, level) {
+            const preview = getValueParamPreview(rule, level).map((value, i) => (
+                `<span class="param-preview-pill">${i + 1}级 ${escapeHtml(value || '-')}</span>`
+            )).join('');
+            const type = rule.type || 'linear';
+            const mainInput = type === 'fixed'
+                ? `<input type="text" class="form-input" value="${escapeAttr(rule.value)}" placeholder="固定值" oninput="updateValueParamRule(${index}, 'value', this.value)">`
+                : type === 'list'
+                    ? `<input type="text" class="form-input" value="${escapeAttr(rule.values)}" placeholder="10,15,20" oninput="updateValueParamRule(${index}, 'values', this.value)">`
+                    : `<input type="text" class="form-input" value="${escapeAttr(rule.base)}" placeholder="基础值" oninput="updateValueParamRule(${index}, 'base', this.value)">`;
+            const secondInput = type === 'linear'
+                ? `<input type="text" class="form-input" value="${escapeAttr(rule.step)}" placeholder="每级+" oninput="updateValueParamRule(${index}, 'step', this.value)">`
+                : '<span class="param-hint">按等级预览见下方</span>';
+
+            return `
+                <div class="param-row" data-param-index="${index}">
+                    <button class="param-key" type="button" onclick="insertParamPlaceholder('${escapeJsString(rule.key)}')">{${escapeHtml(rule.key)}}</button>
+                    <input type="text" class="form-input" value="${escapeAttr(rule.label)}" placeholder="名称/备注" oninput="updateValueParamRule(${index}, 'label', this.value)">
+                    <select class="param-type-select" onchange="updateValueParamRule(${index}, 'type', this.value)">
+                        <option value="linear" ${type === 'linear' ? 'selected' : ''}>每级递增</option>
+                        <option value="fixed" ${type === 'fixed' ? 'selected' : ''}>固定值</option>
+                        <option value="list" ${type === 'list' ? 'selected' : ''}>逐级填写</option>
+                    </select>
+                    ${mainInput}
+                    ${secondInput}
+                    <button class="property-remove" type="button" onclick="removeValueParamRule(${index})">×</button>
+                    <div class="param-preview">${preview}</div>
+                </div>
+            `;
+        }
+
+        function updateValueParamRule(index, field, value) {
+            const rules = normalizeValueParamRules(state.valueParamRules);
+            if (!rules[index]) return;
+            if (field === 'type') {
+                rules[index].type = value;
+            } else if (field === 'key') {
+                rules[index].key = normalizeParamKey(value);
+            } else {
+                rules[index][field] = value;
+            }
+            state.valueParamRules = rules;
+            syncValueParamTextFromRules();
+            onSpellDataChange({renderParams: field === 'type' || field === 'key'});
+        }
+
+        function removeValueParamRule(index) {
+            const rules = normalizeValueParamRules(state.valueParamRules);
+            if (!rules[index]) return;
+            rules.splice(index, 1);
+            state.valueParamRules = rules;
+            syncValueParamTextFromRules();
+            onSpellDataChange();
+        }
+
+        function addValueParamRule() {
+            const rules = normalizeValueParamRules(state.valueParamRules);
+            rules.push({key: getNextParamKey(), label: '', type: 'linear', value: '', base: '', step: '', values: ''});
+            state.valueParamRules = rules;
+            syncValueParamTextFromRules();
+            onSpellDataChange();
+        }
+
+        function insertParamPlaceholder(key) {
+            const input = document.activeElement && ['normalWordText', 'updateWordText'].includes(document.activeElement.id)
+                ? document.activeElement
+                : document.getElementById(state.lastDescriptionField) || document.getElementById('normalWordText');
+            if (!input) return;
+            const token = `{${key}}`;
+            const start = input.selectionStart ?? input.value.length;
+            const end = input.selectionEnd ?? input.value.length;
+            input.value = input.value.slice(0, start) + token + input.value.slice(end);
+            input.focus();
+            input.selectionStart = input.selectionEnd = start + token.length;
+            onSpellDataChange();
+        }
+
+        function rememberDescriptionField(input) {
+            if (input?.id && ['normalWordText', 'updateWordText'].includes(input.id)) {
+                state.lastDescriptionField = input.id;
+            }
+        }
+
+        function syncValueParamTextFromRules() {
+            const input = document.getElementById('valueParams');
+            if (!input) return;
+            input.value = paramsToSaveFormat(valueParamRulesToParams(state.valueParamRules));
+        }
+
+        function onValueParamsTextInput() {
+            const input = document.getElementById('valueParams');
+            const parsed = parseValueParams(input?.value || '');
+            state.valueParamRules = valueParamRulesFromParams(parsed.params, state.valueParamRules);
+            onSpellDataChange();
+        }
+
+        function toggleAdvancedParams() {
+            state.advancedParamsOpen = !state.advancedParamsOpen;
+            renderValueParamEditor();
         }
 
         // ============================================================================
@@ -2574,9 +3219,10 @@
             const colors = state.colorConfig;
             const lv = state.level;
             const mode = state.mode;
-            const parsed = parseValueParams(spell.valueParams || '');
             const totalLevel = Math.max(parseInt(spell.level ?? spell.lv ?? 1) || 1, 1);
-            const vals = generateValues(totalLevel, parsed.params);
+            const vals = Array.isArray(spell.normalWord?.vals) && spell.normalWord.vals.length > 0
+                ? spell.normalWord.vals
+                : generateValuesFromRules(totalLevel, spell.valueParamRules || state.valueParamRules);
 
             let html = '';
             if (mode === 'learn') {
@@ -2657,9 +3303,10 @@
             const colors = state.colorConfig;
             const result = document.getElementById('generateResult');
             let html = '';
-            const parsed = parseValueParams(spell.valueParams || '');
             const totalLevel = Math.max(parseInt(spell.level ?? spell.lv ?? 1) || 1, 1);
-            const vals = generateValues(totalLevel, parsed.params);
+            const vals = Array.isArray(spell.normalWord?.vals) && spell.normalWord.vals.length > 0
+                ? spell.normalWord.vals
+                : generateValuesFromRules(totalLevel, spell.valueParamRules || state.valueParamRules);
 
             // 学习标题
             let learnTitle = `学习 ${dyeing('%d 级', colors.learnLevel)} ${spell.name}`;
@@ -2734,7 +3381,7 @@
         }
 
         function escapeHtml(str) {
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
         function escapeBacktick(str) {

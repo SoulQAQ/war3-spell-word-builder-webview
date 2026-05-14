@@ -1,0 +1,13 @@
+codex resume 019e0754-e307-7c81-9085-0ef7f10c3905 2026年5月10日
+
+
+
+
+
+
+
+
+
+"C:\Program Files\PowerShell\7\pwsh.exe"  -NoExit -Command Set-Location 'F:\ai\程序'"
+
+

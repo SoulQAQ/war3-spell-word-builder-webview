@@ -223,39 +223,27 @@ function dyeing(str, color) {
 
 ---
 
-## 6. Value Formula Parsing
+## 6. Value Parameters
 
-The application supports a formula syntax for level-based values:
+The editor uses the skill level input as the level count. Description placeholders such as `{a}` are matched with value parameter rules. The UI stores both the legacy compact text form and structured rules for easier editing:
 
+```json
+{
+  "valueParams": "a=100+10;b=3,4,5",
+  "valueParamRules": [
+    {"key": "a", "label": "Damage", "type": "linear", "base": "100", "step": "10"},
+    {"key": "b", "label": "Stun", "type": "list", "values": "3,4,5"}
+  ]
+}
 ```
-[lv=3][a=100+10][b=3,4,5]
-```
 
-- `[lv=N]`: Number of levels
-- `[key=base+increment]`: Each level adds `increment` to `base`
-- `[key=v1,v2,v3]`: Explicit values per level
+- `key=base+increment`: Each level adds `increment` to `base`
+- `key=v1,v2,v3`: Explicit values per level
+- Legacy `[lv=3][a=100+10]` data is still parsed, but `lv` is ignored after migration because level count now comes from the editor input
 
 Usage in description text:
 ```
 "Deals {a} damage and stuns for {b} seconds."
-```
-
-Parsing function (JavaScript):
-```javascript
-function conversion(str) {
-    // Parse [lv=N]
-    const lvMatch = str.match(/\[lv=(\d+)\]/);
-    const lv = lvMatch ? parseInt(lvMatch[1]) : 1;
-    
-    // Parse other parameters
-    const result = [];
-    for (let i = 0; i < lv; i++) {
-        const obj = {};
-        // Extract values from formulas or lists
-        result.push(obj);
-    }
-    return result;
-}
 ```
 
 ---
